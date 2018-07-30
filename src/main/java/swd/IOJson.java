@@ -54,7 +54,7 @@ public class IOJson {
 				text.append("  ");
 				String[] item=entry.getValue().get(i);
 				text.append(item[1]);
-				text.append(" "+"<i>"+"--ժ¼��");
+				text.append(" "+"<i>"+"--摘录自");
 				text.append("<a href=\"file:///D:/Lucene/src/"+entry.getKey()+"\">"+entry.getKey()+"</a>");
 				text.append(" "+item[0]+"</i>");
 				text.append("<br/>");

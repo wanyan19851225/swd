@@ -19,7 +19,7 @@ public class IOHttp {
         while ((line = br.readLine()) != null)
             sb.append(line);  
           
-        //将json字符串转换为json对象  
+        //灏唈son瀛楃涓茶浆鎹负json瀵硅薄   
         JSONObject json=JSONObject.fromObject(sb.toString());  
         
         return json;

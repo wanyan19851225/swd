@@ -2,6 +2,9 @@ package swd;
 
 import java.io.IOException;
 import java.io.Writer;
+import java.sql.Date;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -38,12 +41,16 @@ public class ExecuteRequest {
 		}
 		case 102:{
 			HandleLucene handle=new HandleLucene();
-			Map<String,Integer> fre=handle.GetTermFreq(Paths.repositorypath);
+			//Map<String,Integer> fre=handle.GetTermFreq(Paths.repositorypath);
+			Map<String,String[]> fre=handle.GetFileInfo(Paths.repositorypath);
 	        JSONArray filelist=new JSONArray();
-			for(Entry<String,Integer> entry: fre.entrySet()){
+			for(Entry<String,String[]> entry: fre.entrySet()){
 				JSONObject tem=new JSONObject();
-				tem.accumulate("file",entry.getKey());
-				tem.accumulate("lawnum",entry.getValue());		//·¨Ìõ¸öÊı
+				tem.accumulate("file",entry.getKey());			//æ–‡æ¡£åç§°
+				String[] info=entry.getValue();
+				tem.accumulate("lawnum",info[2]);		//æ³•æ¡æ€»æ•°
+				tem.accumulate("author",info[0]);		//æ³•æ¡ä½œè€…
+				tem.accumulate("time",info[1]);			//æ³•æ¡åˆ›å»ºæ—¥æœŸ			
 				filelist.add(tem);
 			}
 	        JSONObject send=new JSONObject();
@@ -55,6 +62,9 @@ public class ExecuteRequest {
 		}
 		case 103:{
 	        JSONArray objarry=j.getJSONArray("lawslist");
+	        String author=j.getString("user");					//æ³•æ¡ä½œè€…
+			Date d=new Date(System.currentTimeMillis());		//æ³•æ¡åˆ›å»ºæ—¥æœŸ		
+			DateFormat df=new SimpleDateFormat("yyyy-MM-dd");
 	        JSONObject tem=new JSONObject();
 	        List<String[]> laws=new ArrayList<String[]>();
 	        for(int i=0;i<objarry.size();i++){		
@@ -67,11 +77,11 @@ public class ExecuteRequest {
 	        Map<String,List<String[]>> content=new HashMap<String,List<String[]>>();
 	        content.put(j.getString("file"),laws);
 	        StringBuffer indexpath=new StringBuffer(Paths.itempath);
-	        indexpath.append(j.getString("user")+"\\");
+	        indexpath.append(author+"\\");
 	        indexpath.append(UUID.randomUUID().toString().replace("-","")+"\\");
 //	        indexpath.append(j.getString("file"));
 	        HandleLucene handle=new HandleLucene();
-	        int tatol=handle.AddIndex(content,indexpath.toString());
+	        int tatol=handle.AddIndex(content,author,df.format(d),indexpath.toString());
 	        JSONObject send=new JSONObject();
 	        send.put("token","");
 	        send.put("command","103");
@@ -105,7 +115,7 @@ public class ExecuteRequest {
 			JSONObject send=new JSONObject();
 			if(!content.isEmpty()){
 				List<String[]> laws=content.get(file);
-				int count = laws.size();		//´«¸ø·şÎñÆ÷µÄ·¨Ìõ×ÜÊı
+				int count = laws.size();		//ä¼ ç»™æœåŠ¡å™¨çš„æ³•æ¡æ€»æ•°
 				send.accumulate("count",count);
 		        JSONArray lawslist=new JSONArray();
 				for(int i=0;i<count;i++){
@@ -133,7 +143,7 @@ public class ExecuteRequest {
 			JSONObject send=new JSONObject();
 			if(!content.isEmpty()){
 				List<String[]> laws=content.get(file);
-				int count = laws.size();		//´«¸ø·şÎñÆ÷µÄ·¨Ìõ×ÜÊı
+				int count = laws.size();		//ä¼ ç»™æœåŠ¡å™¨çš„æ³•æ¡æ€»æ•°
 				send.accumulate("count",count);
 		        JSONArray lawslist=new JSONArray();
 				for(int i=0;i<count;i++){
@@ -142,6 +152,8 @@ public class ExecuteRequest {
 					tem.accumulate("number",i);
 					tem.accumulate("path",law[0]);
 					tem.accumulate("law",law[1]);
+					tem.accumulate("author",law[2]);
+					tem.accumulate("time",law[3]);
 					lawslist.add(tem);
 				}
 				send.accumulate("lawslist",lawslist);

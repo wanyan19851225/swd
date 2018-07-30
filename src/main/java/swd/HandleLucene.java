@@ -1,6 +1,5 @@
 package swd;
 
-import java.io.File;
 import java.io.IOException;
 import java.io.StringReader;
 import java.nio.file.Path;
@@ -25,7 +24,6 @@ import org.apache.lucene.document.FieldType;
 import org.apache.lucene.document.IntPoint;
 import org.apache.lucene.document.NumericDocValuesField;
 import org.apache.lucene.document.StoredField;
-import org.apache.lucene.document.TextField;
 import org.apache.lucene.index.DirectoryReader;
 import org.apache.lucene.index.IndexOptions;
 import org.apache.lucene.index.IndexReader;
@@ -39,20 +37,15 @@ import org.apache.lucene.index.TieredMergePolicy;
 import org.apache.lucene.queryparser.classic.MultiFieldQueryParser;
 import org.apache.lucene.queryparser.classic.ParseException;
 import org.apache.lucene.queryparser.classic.QueryParser;
-import org.apache.lucene.queryparser.classic.QueryParser.Operator;
 import org.apache.lucene.search.BooleanClause;
 import org.apache.lucene.search.BooleanQuery;
-import org.apache.lucene.search.FuzzyQuery;
 import org.apache.lucene.search.IndexSearcher;
-import org.apache.lucene.search.PhraseQuery;
 import org.apache.lucene.search.Query;
 import org.apache.lucene.search.ScoreDoc;
 import org.apache.lucene.search.Sort;
 import org.apache.lucene.search.SortField;
 import org.apache.lucene.search.TermQuery;
 import org.apache.lucene.search.TopDocs;
-import org.apache.lucene.search.TopScoreDocCollector;
-import org.apache.lucene.search.TotalHitCountCollector;
 import org.apache.lucene.search.highlight.Fragmenter;
 import org.apache.lucene.search.highlight.Highlighter;
 import org.apache.lucene.search.highlight.InvalidTokenOffsetsException;
@@ -62,7 +55,6 @@ import org.apache.lucene.search.highlight.SimpleHTMLFormatter;
 import org.apache.lucene.search.highlight.SimpleSpanFragmenter;
 import org.apache.lucene.store.FSDirectory;
 import org.apache.lucene.store.IOContext;
-import org.apache.lucene.store.LockObtainFailedException;
 import org.apache.lucene.store.RAMDirectory;
 import org.apache.lucene.util.BytesRef;
 
@@ -80,25 +72,25 @@ public class HandleLucene {
 	private FSDirectory dir;
 	
 	/*
-	 * 扫描文件，建立索引文�?
+	 * 扫描文件，建立索引文件
 	 *
 	 * @params fdir
-	 * 				文件�?
+	 * 				文件夹
 	 * 		   indexpath
 	 * 				索引文件存储位置
 	 * @return Integer	
-	 * 				返回�?有文件的索引�?
+	 * 				返回所有文件的索引数
 	 * 
 	 * @2017-11-1
-	 * 			修改返回参数为Integer,返回�?有文件的索引�?
+	 * 			修改返回参数为Integer,返回所有文件的索引数
 	 * @2017-11-7
 	 * 			增加对自定义文档和正式格式法条的判断  
 	 * @2017-11-10
-	 *          修改file字段的索引�?�项，由IndexOptions.NONE改为IndexOptions.DOCS,不建立索引改为只对doc建立索引，这样能够根据file字段删除索引
+	 *          修改file字段的索引选项，由IndexOptions.NONE改为IndexOptions.DOCS,不建立索引改为只对doc建立索引，这样能够根据file字段删除索引
 	 * @2017-11-17
 	 * 			修复当文件夹中没有法条文档时，创建空索引的bug
-	 * 			增加调用GetIndexOflaw或�?�GetIndexOfdocment后，是否为空的判断，如果为空则跳过不建立索引
-	 *			增加对path字段，增加NumericDocValuesField字段，用于排�?
+	 * 			增加调用GetIndexOflaw或者GetIndexOfdocment后，是否为空的判断，如果为空则跳过不建立索引
+	 *			增加对path字段，增加NumericDocValuesField字段，用于排序
 	 *          
 	 */
 /*	
@@ -110,11 +102,11 @@ public class HandleLucene {
 		
 		int totalofindex=0;
 		
-		if(filesnum!=0){		//判断文件夹下是否有法条文�?
+		if(filesnum!=0){		//判断文件夹下是否有法条文档
 		
 			Path inpath=Paths.get(indexpath);
 				
-			Analyzer analyzer = new StandardAnalyzer();		//创建标准分词�?
+			Analyzer analyzer = new StandardAnalyzer();		//创建标准分词器
 	
 			FSDirectory fsdir=FSDirectory.open(inpath);		//创建磁盘索引文件
 		
@@ -132,7 +124,7 @@ public class HandleLucene {
 				String check=fname.substring(fname.length()-2,fname.length());
 				Map<Integer,String> law=new HashMap<Integer,String>();
 			
-				if(check.contains("�?")||check.contains("条例")||check.contains("草案")){
+				if(check.contains("�?")||check.contains("条例")||check.contains("草案")){
 			
 					law=ioword.GetIndexOflaw(files[i]);
 				}
@@ -154,7 +146,7 @@ public class HandleLucene {
 				
 //						System.out.println(laws);
 					
-						Document doc=new Document();		//创建Document,每一个发条新建一�?		
+						Document doc=new Document();		//创建Document,每一个发条新建一�?		
 						FieldType fieldtype=new FieldType();
 						fieldtype.setIndexOptions(IndexOptions.DOCS);
 						fieldtype.setStored(true);		
@@ -165,7 +157,7 @@ public class HandleLucene {
 						doc.add(new StoredField("path",key));
 						doc.add(new Field("law",law.get(key),TextField.TYPE_STORED));		//法条内容索引、分词，存储
 		    	
-						ramiwriter.addDocument(doc);		//将法条索引添加到内存索引�?			  
+						ramiwriter.addDocument(doc);		//将法条索引添加到内存索引�?			  
 					}
 				
 			}
@@ -178,7 +170,7 @@ public class HandleLucene {
 			IndexWriterConfig fsconfig=new IndexWriterConfig(analyzer); 
 			fsconfig.setOpenMode(IndexWriterConfig.OpenMode.CREATE);
 			IndexWriter fsiwriter=new IndexWriter(fsdir,fsconfig);   
-			fsiwriter.addIndexes(ramdir); 		//程序结束后，将内存索引写入到磁盘索引�?
+			fsiwriter.addIndexes(ramdir); 		//程序结束后，将内存索引写入到磁盘索引�?
 			fsiwriter.close();
 		}
 		else
@@ -197,11 +189,11 @@ public class HandleLucene {
 	 * 该方法与使用单一查询方式
 	 *
 	 * @params indexpath
-	 * 				索引文件�?在目�?
+	 * 				索引文件�?在目�?
 	 * 			keywords 
 	 * 				从JTextField获取用户输入的关键字
 	 * 			top
-	 * 				从JRadio获取用户选择的搜索条数，在索引文件中根据相关度排序，返回前top�?
+	 * 				从JRadio获取用户选择的搜索条数，在索引文件中根据相关度排序，返回前top�?
 	 * 			
 	 * @return Map<Stirng,List<String[]>>
 	 * 				将搜索结果以Map<文件名，[章节，法条]>的映射关系，返回查询结果		   
@@ -224,7 +216,7 @@ public class HandleLucene {
 
 		RAMDirectory ramdir=new RAMDirectory(fsdir,iocontext);		//创建内存索引文件，并将磁盘索引文件放到内存中
 		
-		Analyzer analyzer=new StandardAnalyzer();		//创建标准分词�?
+		Analyzer analyzer=new StandardAnalyzer();		//创建标准分词�?
 
 		IndexReader indexreader=DirectoryReader.open(ramdir);
 
@@ -239,7 +231,7 @@ public class HandleLucene {
 //		 PhraseQuery.Builder builder = new PhraseQuery.Builder();
 //		 builder.add(term);
 //		 PhraseQuery phrasequery=builder.build();
-//		查询分析�?	
+//		查询分析�?	
 			
         QueryParser parser=new QueryParser("law", analyzer);
            
@@ -255,12 +247,12 @@ public class HandleLucene {
         	return null;
         }
         
-        //此处加入的是搜索结果的高亮部�?
-        SimpleHTMLFormatter simpleHTMLFormatter = new SimpleHTMLFormatter("<b><font color=red>","</font></b>"); //如果不指定参数的话，默认是加粗，�?<b><b/>
+        //此处加入的是搜索结果的高亮部�?
+        SimpleHTMLFormatter simpleHTMLFormatter = new SimpleHTMLFormatter("<b><font color=red>","</font></b>"); //如果不指定参数的话，默认是加粗，�?<b><b/>
         QueryScorer scorer = new QueryScorer(query);//计算得分，会初始化一个查询结果最高的得分
-//        Fragmenter fragmenter = new SimpleSpanFragmenter(scorer); //根据这个得分计算出一个片�?
+//        Fragmenter fragmenter = new SimpleSpanFragmenter(scorer); //根据这个得分计算出一个片�?
         Highlighter highlighter = new Highlighter(simpleHTMLFormatter, scorer);
- //       highlighter.setTextFragmenter(fragmenter); //设置�?下要显示的片�?
+ //       highlighter.setTextFragmenter(fragmenter); //设置�?下要显示的片�?
   
         for(int i=0;i<num;i++){
         	
@@ -269,9 +261,9 @@ public class HandleLucene {
     		String temp=hitdoc.get("file");
     		String indexlaws[]=new String[2];
     		Integer index=Integer.valueOf(hitdoc.get("path"));		
-    		indexlaws[0]="��"+index/100000+"��"+" ";
+    		indexlaws[0]="��"+index/100000+"��"+" ";
     		index=index%100000;
-    		indexlaws[0]+="��"+index/1000+"��";
+    		indexlaws[0]+="��"+index/1000+"��";
     		String laws=hitdoc.get("law");
     		if(laws!=null){
     			TokenStream tokenStream = analyzer.tokenStream("laws",new StringReader(laws));
@@ -315,29 +307,28 @@ public class HandleLucene {
 	 * @author: wanyan 
 	 * date: 2017-10-31 
 	 * 
-	 * 该方法与GetSearch功能�?致，直接返回法条内容，只是可以使用多条件、多域进行查�?
+	 * 该方法与GetSearch功能�?致，直接返回法条内容，只是可以使用多条件、多域进行查�?
 	 *
 	 * @params indexpath
-	 * 				索引文件�?在目�?
+	 * 				索引文件�?在目�?
 	 * 			keywords 
-	 * 				从JTextField获取用户输入的多个关键字,使用String[]方式传�?�，[关键字，查询条件]
+	 * 				从JTextField获取用户输入的多个关键字,使用String[]方式传�?�，[关键字，查询条件]
 	 * 			top
-	 * 				从JRadio获取用户选择的搜索条数，在索引文件中根据相关度排序，返回前top�?
+	 * 				从JRadio获取用户选择的搜索条数，在索引文件中根据相关度排序，返回前top�?
 	 * 			
 	 * @return Map<Stirng,List<String[]>>
 	 * 				将搜索结果以Map<文件名，[章节，法条]>的映射关系，返回查询结果		   
 	 * 						  
 	 * @2017-10-31
-	 * 			修改使用BooleanQuery方式实现多条件查�?
+	 * 			修改使用BooleanQuery方式实现多条件查�?
 	 * @2017-11-1
-	 * 			修改同时支持单条件查询和多条件查�?
+	 * 			修改同时支持单条件查询和多条件查�?
 	 * 			修改使用查询分析器QueryParser实现多域、多字段、多条件查询
 	 * @2017-11-16
 	 * 			修改使用MultiFieldQueryParser类实现多字段、多条件查询
 	 * 
 	 */
 	
-	@SuppressWarnings("resource")
 	public Map<String,List<String[]>> GetMultipleSearch(String indexpath,List<String[]> keywordset,int top) throws IOException, ParseException, InvalidTokenOffsetsException{
 		
 		Map<String,List<String[]>> files=new LinkedHashMap<String,List<String[]>>();
@@ -350,7 +341,7 @@ public class HandleLucene {
 
 		RAMDirectory ramdir=new RAMDirectory(fsdir,iocontext);		//创建内存索引文件，并将磁盘索引文件放到内存中
 		
-		Analyzer analyzer=new StandardAnalyzer();		//创建标准分词�?
+		Analyzer analyzer=new StandardAnalyzer();		//创建标准分词�?
 
 		IndexReader indexreader=DirectoryReader.open(ramdir);
 
@@ -414,12 +405,12 @@ public class HandleLucene {
         	return null;
         }
         
-        //此处加入的是搜索结果的高亮部�?
-        SimpleHTMLFormatter simpleHTMLFormatter = new SimpleHTMLFormatter("<b><font color=red>","</font></b>"); //如果不指定参数的话，默认是加粗，�?<b><b/>
+        //此处加入的是搜索结果的高亮部�?
+        SimpleHTMLFormatter simpleHTMLFormatter = new SimpleHTMLFormatter("<b><font color=red>","</font></b>"); //如果不指定参数的话，默认是加粗，�?<b><b/>
         QueryScorer scorer = new QueryScorer(query);//计算得分，会初始化一个查询结果最高的得分
-        Fragmenter fragmenter = new SimpleSpanFragmenter(scorer); //根据这个得分计算出一个片�?
+        Fragmenter fragmenter = new SimpleSpanFragmenter(scorer); //根据这个得分计算出一个片�?
         Highlighter highlighter = new Highlighter(simpleHTMLFormatter, scorer);
-        highlighter.setTextFragmenter(fragmenter); //设置�?下要显示的片�?
+        highlighter.setTextFragmenter(fragmenter); //设置�?下要显示的片�?
   
         for(int i=0;i<num;i++){
         	
@@ -428,9 +419,9 @@ public class HandleLucene {
     		String temp=hitdoc.get("file");
     		String indexlaws[]=new String[2];
     		Integer index=Integer.valueOf(hitdoc.get("path"));		
-    		indexlaws[0]="�?"+index/100000+"�?"+"&emsp";
+    		indexlaws[0]="�?"+index/100000+"�?"+"&emsp";
     		index=index%100000;
-    		indexlaws[0]+="�?"+index/1000+"�?";
+    		indexlaws[0]+="�?"+index/1000+"�?";
     		String laws=hitdoc.get("law");
     		if(laws!=null){
     			TokenStream tokenStream=analyzer.tokenStream("laws",new StringReader(laws));
@@ -464,24 +455,24 @@ public class HandleLucene {
 	 * @author: wanyan 
 	 * date: 2017-11-18 
 	 * 
-	 * 该方法与GetSearch功能�?致，直接返回法条内容，只是可以使用多条件、多域进行查�?
+	 * 该方法与GetSearch功能�?致，直接返回法条内容，只是可以使用多条件、多域进行查�?
 	 *
 	 * @params indexpath
-	 * 				索引文件�?在目�?
+	 * 				索引文件�?在目�?
 	 * 			fields
-	 * 				指定从哪几个字段查询，使用String[]方式传参�?
+	 * 				指定从哪几个字段查询，使用String[]方式传参�?
 	 * 			range
 	 * 				指定从哪些文档里搜索keywords
 	 * 			keywords 
-	 * 				从JTextField获取用户输入的多个关键字,使用String方式传�??
+	 * 				从JTextField获取用户输入的多个关键字,使用String方式传�??
 	 * 			top
-	 * 				从JRadio获取用户选择的搜索条数，在索引文件中根据相关度排序，返回前top�?
+	 * 				从JRadio获取用户选择的搜索条数，在索引文件中根据相关度排序，返回前top�?
 	 * 			
 	 * @return Map<Stirng,List<String[]>>
 	 * 				将搜索结果以Map<文件名，[章节，法条]>的映射关系，返回查询结果		   
 	 *
 	 * @2017-11-18
-	 * 			增加List<String>参数，用于指定在哪些文档内查询法�?
+	 * 			增加List<String>参数，用于指定在哪些文档内查询法�?
 	 * 			修改keywords参数类型为String						  
 	 * 
 	 */
@@ -498,7 +489,7 @@ public class HandleLucene {
 
 		RAMDirectory ramdir=new RAMDirectory(fsdir,iocontext);		//创建内存索引文件，并将磁盘索引文件放到内存中
 		
-		Analyzer analyzer=new StandardAnalyzer();		//创建标准分词�?
+		Analyzer analyzer=new StandardAnalyzer();		//创建标准分词�?
 
 		IndexReader indexreader=DirectoryReader.open(ramdir);
 
@@ -550,16 +541,16 @@ public class HandleLucene {
 		        
 		}
 		        
-		    //此处加入的是搜索结果的高亮部�?
-		SimpleHTMLFormatter simpleHTMLFormatter = new SimpleHTMLFormatter("<b><font color=red>","</font></b>"); //如果不指定参数的话，默认是加粗，�?<b><b/>
+		    //此处加入的是搜索结果的高亮部�?
+		SimpleHTMLFormatter simpleHTMLFormatter = new SimpleHTMLFormatter("<b><font color=red>","</font></b>"); //如果不指定参数的话，默认是加粗，�?<b><b/>
 		    
 		QueryScorer scorer = new QueryScorer(query);//计算得分，会初始化一个查询结果最高的得分
 		    
-//		Fragmenter fragmenter = new SimpleSpanFragmenter(scorer); //根据这个得分计算出一个片�?
+//		Fragmenter fragmenter = new SimpleSpanFragmenter(scorer); //根据这个得分计算出一个片�?
 		    
 		Highlighter highlighter = new Highlighter(simpleHTMLFormatter, scorer);
 
-//          highlighter.setTextFragmenter(fragmenter); //设置�?下要显示的片�?
+//          highlighter.setTextFragmenter(fragmenter); //设置�?下要显示的片�?
 		  
 		for(int i=0;i<num;i++){
 		        	
@@ -568,9 +559,9 @@ public class HandleLucene {
 		    String temp=hitdoc.get("file");
 		    String indexlaws[]=new String[2];
 		    Integer index=Integer.valueOf(hitdoc.get("path"));		
-		    indexlaws[0]="�?"+index/100000+"�?"+"&emsp";
+		    indexlaws[0]="�?"+index/100000+"�?"+"&emsp";
 		    index=index%100000;
-		    indexlaws[0]+="�?"+index/1000+"�?";
+		    indexlaws[0]+="�?"+index/1000+"�?";
 		    String laws=hitdoc.get("law");
 		    if(laws!=null){
 		     
@@ -619,14 +610,14 @@ public class HandleLucene {
 	 * @author: wanyan 
 	 * date: 2017-11-16 
 	 * 
-	 * 该方法与GetMultipleSearch功能�?致，直接返回法条内容，只能查询单条件、单字段，针对不分词字段进行查询
+	 * 该方法与GetMultipleSearch功能�?致，直接返回法条内容，只能查询单条件、单字段，针对不分词字段进行查询
 	 *
 	 * @params indexpath
-	 * 				索引文件�?在目�?
+	 * 				索引文件�?在目�?
 	 * 			keywords 
 	 * 				从JTextField获取用户输入的关键字
 	 * 			top
-	 * 				从JRadio获取用户选择的搜索条数，在索引文件中根据相关度排序，返回前top�?
+	 * 				从JRadio获取用户选择的搜索条数，在索引文件中根据相关度排序，返回前top�?
 	 * 			
 	 * @return Map<Stirng,List<String[]>>
 	 * 				将搜索结果以Map<文件名，[章节，法条]>的映射关系，返回查询结果		   
@@ -648,7 +639,7 @@ public class HandleLucene {
 
 		RAMDirectory ramdir=new RAMDirectory(fsdir,iocontext);		//创建内存索引文件，并将磁盘索引文件放到内存中
 		
-		//Analyzer analyzer=new StandardAnalyzer();		//创建标准分词�?
+		//Analyzer analyzer=new StandardAnalyzer();		//创建标准分词�?
 
 		IndexReader indexreader=DirectoryReader.open(ramdir);
 
@@ -658,7 +649,7 @@ public class HandleLucene {
 		
 		TermQuery termquery=new TermQuery(term);
 		
-		SortField sortfield=new SortField("path",SortField.Type.INT,false);		//false为升�?
+		SortField sortfield=new SortField("path",SortField.Type.INT,false);		//false为升�?
        
 		Sort sort=new Sort(sortfield);
 		
@@ -704,34 +695,39 @@ public class HandleLucene {
 	 * @author: wanyan 
 	 * date: 2018-1-23 
 	 * 
-	 * �÷�����GetMultipleSearch����һ�£�ֱ�ӷ��ط������ݣ�ֻ�ܲ�ѯ�����������ֶΣ���Բ��ִ��ֶν��в�ѯ
+	 * �÷�����GetMultipleSearch����һ�£�ֱ�ӷ��ط������ݣ�ֻ�ܲ�ѯ�����������ֶΣ���Բ��ִ��ֶν��в�ѯ
 	 *
 	 * @params indexpath
-	 * 				�����ļ�����Ŀ¼
+	 * 				�����ļ�����Ŀ¼
 	 * 			keywords 
-	 * 				��JTextField��ȡ�û�����Ĺؼ���
+	 * 				��JTextField��ȡ�û�����Ĺؼ���
 	 * 			top
-	 * 				��JRadio��ȡ�û�ѡ��������������������ļ��и�����ض����򣬷���ǰtop��
+	 * 				��JRadio��ȡ�û�ѡ��������������������ļ��и�����ض����򣬷���ǰtop��
 	 * 			
 	 * @return Map<Stirng,List<String[]>>
-	 * 				�����������Map<�ļ�����[�½ڣ�����]>��ӳ���ϵ�����ز�ѯ���		   					  
+	 * 				�����������Map<�ļ�����[�½ڣ�����]>��ӳ���ϵ�����ز�ѯ���
+	 * 
+	 * Modeified Date:2018-7-26
+	 * 				���ӻ�ȡ������������ߺʹ����������������ֶ�ֵ������Map<�ļ���,[�½�,����,����,����]>��ӳ���ϵ,���ز�ѯ���
+	 * 		   					  
 	 * 
 	 */
 	
 	public Map<String,List<String[]>> GetTermSearch(String indexpath,String keywords,int top) throws IOException{
 		
+		@SuppressWarnings("unchecked")
 		Map<String,List<String[]>> files=new LinkedMap();
 		List<String[]> path=new ArrayList<String[]>();
 		
 		Path inpath=Paths.get(indexpath);
 		
-		FSDirectory fsdir=FSDirectory.open(inpath);		//�������������ļ�
+		FSDirectory fsdir=FSDirectory.open(inpath);		//�������������ļ�
 		
 		IOContext iocontext=new IOContext();
 
-		RAMDirectory ramdir=new RAMDirectory(fsdir,iocontext);		//�����ڴ������ļ����������������ļ��ŵ��ڴ���
+		RAMDirectory ramdir=new RAMDirectory(fsdir,iocontext);		//�����ڴ������ļ����������������ļ��ŵ��ڴ���
 		
-//		Analyzer analyzer=new StandardAnalyzer();		//������׼�ִ���
+//		Analyzer analyzer=new StandardAnalyzer();		//������׼�ִ���
 
 		IndexReader indexreader=DirectoryReader.open(ramdir);
 
@@ -741,7 +737,7 @@ public class HandleLucene {
 		
 		TermQuery termquery=new TermQuery(term);
 		
-		SortField sortfield=new SortField("path",SortField.Type.INT,false);		//falseΪ����
+		SortField sortfield=new SortField("path",SortField.Type.INT,false);		//falseΪ����
       
 		Sort sort=new Sort(sortfield);
 	
@@ -761,21 +757,25 @@ public class HandleLucene {
        	
     		   temp=hitdoc.get("file");
    			
-    		   String indexlaws[]=new String[2];
+    		   String indexlaws[]=new String[4];
    			
     		   Integer index=Integer.valueOf(hitdoc.get("path"));		
    		
-    		   indexlaws[0]="��"+index/100000+"��"+" ";
+    		   indexlaws[0]="��"+index/100000+"��"+" ";
    		
     		   index=index%100000;
    		
-    		   indexlaws[0]+="��"+index/1000+"��";
+    		   indexlaws[0]+="��"+index/1000+"��";
    		
     		   String laws=hitdoc.get("law");
+    		   String author=hitdoc.get("author");	//��ȡ��������
+    		   String time=hitdoc.get("time");		//��ȡ������������
    		
     		   if(laws!=null){
        		
     			   indexlaws[1]=laws;
+    			   indexlaws[2]=author;
+    			   indexlaws[3]=time;
            	
     			   path.add(indexlaws);
     		   
@@ -811,7 +811,7 @@ public class HandleLucene {
 	 * @return void
 	 * 
 	 * @2017-11-15
-	 * 			使用方法forceMergeDeletes()，实现立即删�?
+	 * 			使用方法forceMergeDeletes()，实现立即删�?
 	 * 				   				
 	 * 
 	 */
@@ -837,16 +837,16 @@ public class HandleLucene {
 	 * @author: wanyan 
 	 * date: 2017-11-10 
 	 * 
-	 * GetTermFreq方法在根据file字段中，文档名称出现的次数，获取该文档中索引的法条�?�数
+	 * GetTermFreq方法在根据file字段中，文档名称出现的次数，获取该文档中索引的法条�?�数
 	 *
 	 * @params indexpath 
 	 * 				索引文件存放目录
 	 * 				
 	 * @return Map<String,Integer>
-	 * 				返回文档中法条�?�数�?<文档名称，法条�?�数>
+	 * 				返回文档中法条�?�数�?<文档名称，法条�?�数>
 	 * 
 	 * @2017-11-15
-	 * 			修改为使用TermsEnum类获取词�?
+	 * 			修改为使用TermsEnum类获取词�?
 	 * 			修复当没有索引文件时，catch报错异常，并进行弹框提示			   				
 	 * 
 	 */
@@ -854,7 +854,7 @@ public class HandleLucene {
 	public Map<String,Integer> GetTermFreq(String indexpath){
 		Map<String,Integer> res=new HashMap<String,Integer>();
 		Path inpath=Paths.get(indexpath);
-//		Analyzer analyzer=new StandardAnalyzer();		//创建标准分词�?
+//		Analyzer analyzer=new StandardAnalyzer();		//创建标准分词�?
 		try{
 			FSDirectory fsdir=FSDirectory.open(inpath);		//创建磁盘索引文件
 			IOContext iocontext=new IOContext();
@@ -906,7 +906,7 @@ public class HandleLucene {
 		}catch (IOException e) {
 			// TODO Auto-generated catch block
 			if(e.getClass().getSimpleName().equals("IndexNotFoundException")){		//当没有找到索引文件时，catch异常，并弹框提示
-				System.out.println("û�д��������ļ�");
+				System.out.println("û�д��������ļ�");
 			//	e.printStackTrace();
 				return res;
 			}
@@ -914,6 +914,71 @@ public class HandleLucene {
 			else
 				e.printStackTrace();
 		}
+		return res;
+	}
+	
+	/*
+	 *
+	 * Copyright @ 2018 Beijing Beidouht Co. Ltd. 
+	 * All right reserved. 
+	 * @author: wanyan 
+	 * date: 2018-7-26 
+	 * 
+	 * GetFileInfo���ڻ�ȡ�ĵ����ƣ����ߣ��������ڣ������������ĵ���Ϣ���÷������ȵ���GetTermFreq��ȡ�ĵ����ƺͷ�������,Ȼ��ʹ��TermQuery������ʽ,��ѯ�ĵ�������,�ĵ���������
+	 *
+	 * @params indexpath 
+	 * 				�����ļ�λ��
+	 * 				
+	 * @return Map<String,String[]>
+	 * 				���������Map<�ĵ����ƣ�[���ߣ��������ڣ���������]>����ʽ����
+	 * 	   				
+	 * 
+	 */
+	
+	public Map<String,String[]> GetFileInfo(String indexpath){
+		Map<String,String[]> res=new HashMap<String,String[]>();
+		Map<String,Integer> f=this.GetTermFreq(indexpath);	//�洢�ĵ����ơ�����������Map<�ĵ����ƣ���������>
+		
+		Path inpath=Paths.get(indexpath);
+		
+		try{
+			FSDirectory fsdir=FSDirectory.open(inpath);		
+			IOContext iocontext=new IOContext();
+			RAMDirectory ramdir=new RAMDirectory(fsdir,iocontext);		
+			IndexReader indexreader=DirectoryReader.open(ramdir);
+			IndexSearcher indexsearcher=new IndexSearcher(indexreader);
+			
+			for(String file: f.keySet()){
+			
+				Term term=new Term("file",file);
+				TermQuery termquery=new TermQuery(term);				
+			    TopDocs topdocs=indexsearcher.search(termquery,1); 			       
+			    ScoreDoc[] hits=topdocs.scoreDocs;
+	    		Document hitdoc=indexsearcher.doc(hits[0].doc);
+	    	    String finfo[]=new String[3];
+	    	    finfo[0]=hitdoc.get("author");
+	    	    finfo[1]=hitdoc.get("time");
+	    	    finfo[2]=String.valueOf(f.get(file));
+	    	    res.put(file,finfo);		    
+			}
+		
+       
+			ramdir.close();
+			indexreader.close();       
+			fsdir.close();
+		
+		}catch (IOException e) {
+			// TODO Auto-generated catch block
+			if(e.getClass().getSimpleName().equals("IndexNotFoundException")){
+				System.out.println("û�д��������ļ�");
+			//	e.printStackTrace();
+				return res;
+			}
+			
+			else
+				e.printStackTrace();
+		}
+		
 		return res;
 	}
 	
@@ -939,8 +1004,8 @@ public class HandleLucene {
 					Document hitdoc=indexsearcher.doc(hits[i].doc);
 					Map<String,String> m=new HashMap<String,String>();
 					m.put("file",hitdoc.get("file"));
-					m.put("auth",hitdoc.get("auth"));
-					m.put("createtime",hitdoc.get("createtime"));
+					m.put("author",hitdoc.get("author"));
+					m.put("time",hitdoc.get("time"));
 					m.put("count",hitdoc.get("count"));
 					res.add(m);
 				}      
@@ -951,7 +1016,7 @@ public class HandleLucene {
 		}catch (IOException e) {
 			// TODO Auto-generated catch block
 			if(e.getClass().getSimpleName().equals("IndexNotFoundException")){
-				System.out.println("û�д��������ļ�");
+				System.out.println("û�д��������ļ�");
 				return res;
 			}
 			else
@@ -963,13 +1028,43 @@ public class HandleLucene {
 		return res;
 		
 	}
+	
+	/*
+	 *
+	 * Copyright @ 2017 Beijing Beidouht Co. Ltd. 
+	 * All right reserved. 
+	 * @author: wanyan 
+	 * date: 2017-11-10 
+	 * 
+	 * AddIndex�����ڸ��ݴ��ݵ�file�ֶΣ��������ĵ�׷�ӵ��Ѵ��ڵ������ļ��У����û�������ļ����򴴽������ļ�
+	 *
+	 * @params content 
+	 * 				�ѽ�Ҫ׷�ӵķ���������Map�У��ļ���ΪKey,�������浽List<String[]>�У���Ϊvalue,�洢��ʽΪMap<�ļ���������<������������������>>
+	 * 
+	 * 		   author
+	 * 				�����÷���������
+	 * 			
+	 * 		   time
+	 * 				�����÷���������
+	 * 				
+	 * 		   indexpath
+	 * 				�����ļ�·��
+	 * 
+	 * @return Integer
+	 * 				������ӵ������ļ��еķ�����
+	 * 
+	 * Modeified Date:2018-7-25
+	 * 				���Ӳ���author,���ݴ����÷��������ߣ����Բ�����-�洢-���ִʵ���ʽ�洢��Document��
+	 * 				���Ӳ���time,���ݴ����÷��������ڣ����Բ�����-�洢-���ִʵ���ʽ�洢��Document��	   				
+	 * 
+	 */
 
 		
-	public Integer AddIndex(Map<String,List<String[]>> content,String indexpath) throws IOException{
+	public Integer AddIndex(Map<String,List<String[]>> content,String author,String time,String indexpath) throws IOException{
 		
 		Path inpath=Paths.get(indexpath);
 
-		Analyzer analyzer = new StandardAnalyzer();		//创建标准分词�?
+		Analyzer analyzer = new StandardAnalyzer();		//创建标准分词�?
 	
 		FSDirectory fsdir=FSDirectory.open(inpath);		//创建磁盘索引文件
 		
@@ -993,19 +1088,22 @@ public class HandleLucene {
 				lawtype.setIndexOptions(IndexOptions.NONE);
 				lawtype.setStored(true);		
 				lawtype.setTokenized(false);
+				
 				laws=entry.getValue();
 				int count=laws.size();
 				totalofindex=count;
 				for(int i=0;i<count;i++){
-					Document doc=new Document();		//创建Document,每一个发条新建一�?
+					Document doc=new Document();		//创建Document,每一个发条新建一�?
 					doc.add(new Field("file",entry.getKey(),filetype));		//文档名称存储，不分词
 					//doc.add(new IntPoint("path",Integer.valueOf(laws.get(i)[0])));		//法条索引以Int类型存储
 					//doc.add(new StoredField("path",Integer.valueOf(laws.get(i)[0])));
+					doc.add(new Field("author",author,lawtype));		//�洢�÷���������	
+					doc.add(new Field("time",time,lawtype));			//�洢�÷����Ĵ�������
 					doc.add(new NumericDocValuesField("path",Integer.valueOf(laws.get(i)[0])));
-					doc.add(new IntPoint("path",Integer.valueOf(laws.get(i)[0])));		//����������Int���ʹ洢
+					doc.add(new IntPoint("path",Integer.valueOf(laws.get(i)[0])));		//����������Int���ʹ洢
 					doc.add(new StoredField("path",Integer.valueOf(laws.get(i)[0])));
-					doc.add(new Field("law",laws.get(i)[1],lawtype));		//发条内容索引、分词，不存�?
-			    	ramiwriter.addDocument(doc);		//将法条索引添加到内存索引�?	
+					doc.add(new Field("law",laws.get(i)[1],lawtype));		//发条内容索引、分词，不存�?
+			    	ramiwriter.addDocument(doc);		//将法条索引添加到内存索引�?	
 				}	    		  
 			}
 	
@@ -1048,10 +1146,10 @@ public class HandleLucene {
 		FSDirectory dir = FSDirectory.open(inpath);
 		Analyzer analyzer=new StandardAnalyzer();
 		TieredMergePolicy ti=new TieredMergePolicy();
-		ti.setForceMergeDeletesPctAllowed(0);		//����ɾ�������ĺϲ�����Ϊ0����ɾ��segmentʱ���������кϲ�
+		ti.setForceMergeDeletesPctAllowed(0);		//����ɾ�������ĺϲ�����Ϊ0����ɾ��segmentʱ���������кϲ�
     	IndexWriterConfig config=new IndexWriterConfig(analyzer); 
     	config.setOpenMode(IndexWriterConfig.OpenMode.CREATE_OR_APPEND);
-    	config.setMergePolicy(ti);		//���úϲ�����
+    	config.setMergePolicy(ti);		//���úϲ�����
     	writer=new IndexWriter(dir,config);
 		
 		}catch (IOException e) {
@@ -1079,10 +1177,10 @@ public class HandleLucene {
 	
 	public static void main(String[] args) throws Exception{
 		HandleLucene handle=new HandleLucene();
-		Map<String,List<Integer>> files=new HashMap<String,List<Integer>>();
+		//Map<String,List<Integer>> files=new HashMap<String,List<Integer>>();
 		Map<String,List<String[]>> contentoffiles=new HashMap<String,List<String[]>>();
-		Map<String,Integer> fre=new HashMap<String,Integer>();
-		List<String[]> contentoflaw=new ArrayList<String[]>();
+		//Map<String,Integer> fre=new HashMap<String,Integer>();
+		//List<String[]> contentoflaw=new ArrayList<String[]>();
 //		int num=handle.CreateIndex("D:\\Lucene\\src\\","D:\\Lucene\\index\\");
 //		System.out.println(num);
 //		handle.DeleteIndex("劳动人事争议仲裁办案规则（新）法.doc","D:\\Lucene\\index\\");
@@ -1091,10 +1189,10 @@ public class HandleLucene {
 //			System.out.println(key+":"+fre.get(key));
 //		}
 /*
-		files=handle.ExecuteSearch("D:\\Lucene\\index\\","当事�?",4);
+		files=handle.ExecuteSearch("D:\\Lucene\\index\\","当事�?",4);
 		
 		if(files==null){
-			System.out.println("未搜索到关键�?");
+			System.out.println("未搜索到关键�?");
 		}else{
 			for(String key:files.keySet()){
 				System.out.println("文件名："+key);
@@ -1107,7 +1205,7 @@ public class HandleLucene {
 		contentoflaw=handle.GetContentOfLawByIndex(files,"D:\\Lucene\\src\\");
 		
 		if(contentoflaw==null){
-			System.out.println("未搜索到关键�?");
+			System.out.println("未搜索到关键�?");
 		}else{	
 			for(int i=0;i<contentoflaw.size();i++)
 				System.out.println(contentoflaw.get(i)[0]+" "+contentoflaw.get(i)[1]+" "+contentoflaw.get(i)[2]+" "+contentoflaw.get(i)[3]);
@@ -1124,7 +1222,7 @@ public class HandleLucene {
 			for(int i=0;i<contentoffiles.get(key).size();i++){
 				text.append("&emsp&emsp");
 				text.append(contentoffiles.get(key).get(i)[1]);
-				text.append("&emsp"+"<i>"+"--摘录�?");
+				text.append("&emsp"+"<i>"+"--摘录�?");
 				text.append(key);;
 				text.append("&emsp"+contentoffiles.get(key).get(i)[0]+"</i>");
 				text.append("<br/>");

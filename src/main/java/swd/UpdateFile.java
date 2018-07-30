@@ -16,9 +16,9 @@ public class UpdateFile implements Runnable{
 				s=ServletDemo.file.take();
 				if(s!=null){
 					handle.AddIndex(s);
-					System.out.println(s.get("file")+" "+"£ºĞ´ÈëÎÄ¼şÁĞ±í³É¹¦£¡");
+					System.out.println(s.get("file")+" "+"ï¼šå†™å…¥æ–‡ä»¶åˆ—è¡¨æˆåŠŸï¼");
 				}
-				System.out.println("ÎÄ¼ş¶ÓÁĞÖĞ´ı´¦ÀíÔªËØÊ£Óà£º"+ServletDemo.file.size());
+				System.out.println("æ–‡ä»¶é˜Ÿåˆ—ä¸­å¾…å¤„ç†å…ƒç´ å‰©ä½™ï¼š"+ServletDemo.file.size());
 			}
 			handle.CloseIndexWriter();
 

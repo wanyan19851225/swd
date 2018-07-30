@@ -14,17 +14,17 @@ public class UpdateIndex implements Runnable{
 			FSDirectory redir = FSDirectory.open(repath);
 			Analyzer analyzer=new StandardAnalyzer();
 			TieredMergePolicy ti=new TieredMergePolicy();
-			ti.setForceMergeDeletesPctAllowed(0);		//ÉèÖÃÉ¾³ıË÷ÒıµÄºÏ²¢²ßÂÔÎª0£¬ÓĞÉ¾³ısegmentÊ±£¬Á¢¼´½øĞĞºÏ²¢
+			ti.setForceMergeDeletesPctAllowed(0);		//è®¾ç½®åˆ é™¤ç´¢å¼•çš„åˆå¹¶ç­–ç•¥ä¸º0ï¼Œæœ‰åˆ é™¤segmentæ—¶ï¼Œç«‹å³è¿›è¡Œåˆå¹¶
 	    	IndexWriterConfig reconfig=new IndexWriterConfig(analyzer); 
 	    	reconfig.setOpenMode(IndexWriterConfig.OpenMode.CREATE_OR_APPEND);
-	    	reconfig.setMergePolicy(ti);		//ÉèÖÃºÏ²¢²ßÂÔ
+	    	reconfig.setMergePolicy(ti);		//è®¾ç½®åˆå¹¶ç­–ç•¥
 	    	IndexWriter rewriter=new IndexWriter(redir,reconfig);
 	    	*/
 	    	HandleLucene handle=new HandleLucene();
 	    	handle.CreateIndexWriter(swd.Paths.repositorypath);
 			while(f){
 				s=ServletDemo.item.take();
-				System.out.println("¶ÓÁĞÖĞ´ı´¦ÀíÔªËØÊ£Óà£º"+ServletDemo.item.size());
+				System.out.println("é˜Ÿåˆ—ä¸­å¾…å¤„ç†å…ƒç´ å‰©ä½™ï¼š"+ServletDemo.item.size());
 				if(s!=null){
 					
 					if(s[0].equals("a")){
@@ -33,10 +33,10 @@ public class UpdateIndex implements Runnable{
 						FSDirectory brdir=FSDirectory.open(brpath);
 						rewriter.addIndexes(brdir);
 						rewriter.commit();
-						System.out.println(s[1]+" "+"Ğ´ÈëÖĞÑë²Ö¿â³É¹¦£¡");
+						System.out.println(s[1]+" "+"å†™å…¥ä¸­å¤®ä»“åº“æˆåŠŸï¼");
 						 */	
 						handle.InsertIndex(s[1]);
-						System.out.println(s[1]+" "+"Ğ´ÈëÖĞÑë²Ö¿â³É¹¦£¡");
+						System.out.println(s[1]+" "+"å†™å…¥ä¸­å¤®ä»“åº“æˆåŠŸï¼");
 					}
 					if(s[0].equals("d")){
 						/*
@@ -44,10 +44,10 @@ public class UpdateIndex implements Runnable{
 						rewriter.deleteDocuments(t);								
 						rewriter.forceMergeDeletes();
 						rewriter.commit();
-						System.out.println(s[1]+" "+"ÒÆ³ı³É¹¦£¡");
+						System.out.println(s[1]+" "+"ç§»é™¤æˆåŠŸï¼");
 						*/
 						handle.DeleteIndex(s[1]);
-						System.out.println(s[1]+" "+"ÒÆ³ı³É¹¦£¡");
+						System.out.println(s[1]+" "+"ç§»é™¤æˆåŠŸï¼");
 					}
 					//ServletDemo.blockingQueue.poll(0,TimeUnit.MILLISECONDS);
 				}

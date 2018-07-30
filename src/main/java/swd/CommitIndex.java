@@ -22,7 +22,7 @@ import javax.servlet.http.HttpServletResponse;
 
 import net.sf.json.JSONArray;
 import net.sf.json.JSONObject;
-import redis.clients.jedis.Jedis;
+//import redis.clients.jedis.Jedis;
 
 /**
  * Servlet implementation class CommitIndex
@@ -67,6 +67,9 @@ public class CommitIndex extends HttpServlet {
 		// TODO Auto-generated method stub
 		JSONObject j=IOHttp.GetJson(request);
         JSONArray objarry=j.getJSONArray("lawslist");
+        String author=j.getString("user");
+		Date dt = new Date();      
+		SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
         JSONObject tem=new JSONObject();
         List<String[]> laws=new ArrayList<String[]>();
         for(int i=0;i<objarry.size();i++){		
@@ -80,17 +83,15 @@ public class CommitIndex extends HttpServlet {
         content.put(j.getString("file"),laws);
         StringBuffer indexpath=new StringBuffer(Paths.itempath);
         String id=UUID.randomUUID().toString().replace("-","");
-        indexpath.append(j.getString("user")+"\\");
+        indexpath.append(author+"\\");
         indexpath.append(id+"\\");
         HandleLucene handle=new HandleLucene();
-        int tatol=handle.AddIndex(content,indexpath.toString());
+        int tatol=handle.AddIndex(content,author,sdf.format(dt),indexpath.toString());
         
 		Map<String,String> doc=new HashMap<String,String>();
 		doc.put("auth",j.getString("user"));
 		doc.put("file",j.getString("file"));
 		doc.put("count",j.getString("count"));
-		Date dt = new Date();      
-		SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
 		doc.put("createtime",sdf.format(dt));
 		try {
 			ServletDemo.file.put(doc);

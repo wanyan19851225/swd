@@ -22,19 +22,19 @@ public class URLFilter implements Filter {
   
     public void doFilter(ServletRequest req, ServletResponse res, FilterChain chain) throws IOException, ServletException {    
         
-    	//ÉèÖÃ±àÂë¸ñÊ½
+    	//è®¾ç½®ç¼–ç æ ¼å¼
     	req.setCharacterEncoding("utf-8");
     	res.setCharacterEncoding("utf-8");
     	res.setContentType("text/html;charset=utf-8");
     	
-    	//ÉèÖÃ¿çÓòÇëÇó  
+    	//è®¾ç½®è·¨åŸŸè¯·æ±‚  
         HttpServletResponse response = (HttpServletResponse) res;           
         response.setHeader("Access-Control-Allow-Origin", "*");  
         response.setHeader("Access-Control-Allow-Methods", "POST, GET, DELETE, PUT");  
         response.setHeader("Access-Control-Max-Age", "3628800");
         response.setHeader("Access-Control-Allow-Headers", "Content-Type,Access-Token");
   
-        System.out.println(req.getRemoteAddr()+":½¨Á¢ÇëÇó£¡");  
+        System.out.println(req.getRemoteAddr()+":å»ºç«‹è¯·æ±‚ï¼");  
         
         chain.doFilter(req, response);    
     }   
