@@ -261,9 +261,9 @@ public class HandleLucene {
     		String temp=hitdoc.get("file");
     		String indexlaws[]=new String[2];
     		Integer index=Integer.valueOf(hitdoc.get("path"));		
-    		indexlaws[0]="��"+index/100000+"��"+" ";
+    		indexlaws[0]="第"+index/100000+"章"+" ";
     		index=index%100000;
-    		indexlaws[0]+="��"+index/1000+"��";
+    		indexlaws[0]+="第"+index/1000+"节";
     		String laws=hitdoc.get("law");
     		if(laws!=null){
     			TokenStream tokenStream = analyzer.tokenStream("laws",new StringReader(laws));
@@ -419,9 +419,9 @@ public class HandleLucene {
     		String temp=hitdoc.get("file");
     		String indexlaws[]=new String[2];
     		Integer index=Integer.valueOf(hitdoc.get("path"));		
-    		indexlaws[0]="�?"+index/100000+"�?"+"&emsp";
+    		indexlaws[0]="第"+index/100000+"章"+"&emsp";
     		index=index%100000;
-    		indexlaws[0]+="�?"+index/1000+"�?";
+    		indexlaws[0]+="第"+index/1000+"节";
     		String laws=hitdoc.get("law");
     		if(laws!=null){
     			TokenStream tokenStream=analyzer.tokenStream("laws",new StringReader(laws));
@@ -559,9 +559,9 @@ public class HandleLucene {
 		    String temp=hitdoc.get("file");
 		    String indexlaws[]=new String[2];
 		    Integer index=Integer.valueOf(hitdoc.get("path"));		
-		    indexlaws[0]="�?"+index/100000+"�?"+"&emsp";
+		    indexlaws[0]="第"+index/100000+"章"+"&emsp";
 		    index=index%100000;
-		    indexlaws[0]+="�?"+index/1000+"�?";
+		    indexlaws[0]+="第"+index/1000+"节";
 		    String laws=hitdoc.get("law");
 		    if(laws!=null){
 		     
@@ -761,11 +761,11 @@ public class HandleLucene {
    			
     		   Integer index=Integer.valueOf(hitdoc.get("path"));		
    		
-    		   indexlaws[0]="��"+index/100000+"��"+" ";
+    		   indexlaws[0]="第"+index/100000+"章"+" ";
    		
     		   index=index%100000;
    		
-    		   indexlaws[0]+="��"+index/1000+"��";
+    		   indexlaws[0]+="第"+index/1000+"节";
    		
     		   String laws=hitdoc.get("law");
     		   String author=hitdoc.get("author");	//��ȡ��������
@@ -906,7 +906,7 @@ public class HandleLucene {
 		}catch (IOException e) {
 			// TODO Auto-generated catch block
 			if(e.getClass().getSimpleName().equals("IndexNotFoundException")){		//当没有找到索引文件时，catch异常，并弹框提示
-				System.out.println("û�д��������ļ�");
+				System.out.println("检索文档名称和文档中法条总数时失败，原因：未检索到索引文件");
 			//	e.printStackTrace();
 				return res;
 			}
@@ -970,7 +970,7 @@ public class HandleLucene {
 		}catch (IOException e) {
 			// TODO Auto-generated catch block
 			if(e.getClass().getSimpleName().equals("IndexNotFoundException")){
-				System.out.println("û�д��������ļ�");
+				System.out.println("检索文档作者和文档创建日期时失败，原因：未检索到索引文件");
 			//	e.printStackTrace();
 				return res;
 			}
