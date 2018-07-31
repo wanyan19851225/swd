@@ -1,8 +1,8 @@
 package swd;
 
 public interface Paths {
-	public static final String repositorypath  = "D:\\Lucene\\RemoteRepository\\index";
-	public static final String itempath = "D:\\Lucene\\indexs\\";
-	public static final String filepath = "D:\\SearchingOfLaw\\DB\\file";
+	public static final String repositorypath  = "C:\\Program Files (x86)\\SearchingOfLaw\\RemoteRepository\\index";
+	public static final String itempath = "C:\\Program Files (x86)\\SearchingOfLaw\\indexs\\";
+	public static final String filepath = "C:\\Program Files (x86)\\SearchingOfLaw\\DB\\file";
 
 }
