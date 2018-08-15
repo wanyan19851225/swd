@@ -60,7 +60,7 @@ public class ExecuteRequest {
 	        out.write(send.toString());
 	        break;
 		}
-		case 103:{
+		case 103:{		//提交索引
 	        JSONArray objarry=j.getJSONArray("lawslist");
 	        String author=j.getString("user");					//法条作者
 			Date d=new Date(System.currentTimeMillis());		//法条创建日期		

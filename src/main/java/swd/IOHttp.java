@@ -19,7 +19,9 @@ public class IOHttp {
         while ((line = br.readLine()) != null)
             sb.append(line);  
           
-        //将json字符串转换为json对象   
+        //将json字符串转换为json对象  
+//        GZipUntils gzip=new GZipUntils();
+//        String re=gzip.Gzip2S(sb.toString());
         JSONObject json=JSONObject.fromObject(sb.toString());  
         
         return json;
