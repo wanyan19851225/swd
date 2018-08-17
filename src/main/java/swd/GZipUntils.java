@@ -7,6 +7,8 @@ import java.io.UnsupportedEncodingException;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
 
+import org.apache.commons.codec.binary.Base64;
+
 public class GZipUntils {
 
 	public String S2Gzip(String s) throws UnsupportedEncodingException{
@@ -18,7 +20,7 @@ public class GZipUntils {
 		GZIPOutputStream gzip=null;
 		try {
 			gzip = new GZIPOutputStream(out);
-			gzip.write(s.getBytes());
+			gzip.write(s.getBytes("utf-8"));
 		} catch (IOException e) {
 			e.printStackTrace();
 		}finally{
@@ -30,24 +32,24 @@ public class GZipUntils {
 				}
 			}
 		}
-		return new String(out.toByteArray(),"ISO-8859-1");
+		return new String(Base64.encodeBase64(out.toByteArray()));
 	}
 	public String Gzip2S(String s){
 		if (s == null || s.length() == 0)
 			return s;
-
+		String res=null;
 		ByteArrayOutputStream out=new ByteArrayOutputStream();
 		ByteArrayInputStream in=null;
 		GZIPInputStream gzip=null;
 		try {
-			in=new ByteArrayInputStream(s.getBytes("ISO-8859-1"));
+			in=new ByteArrayInputStream(Base64.decodeBase64(s));
 			gzip=new GZIPInputStream(in);
 			byte[] buffer = new byte[1024];
 			int offset = -1;
-			while ((offset = gzip.read(buffer,0,buffer.length)) != -1) {
+			while ((offset = gzip.read(buffer)) != -1) {
 				out.write(buffer, 0, offset);
 				}
-
+			res=new String(out.toByteArray(),"utf-8");
 		} catch (UnsupportedEncodingException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
@@ -76,7 +78,7 @@ public class GZipUntils {
 					}
 				}
 		}
-		return new String(out.toByteArray());
+		return res;
 	}
 
 }

@@ -45,6 +45,11 @@
     	<artifactId>lucene-highlighter</artifactId>
     	<version>7.1.0</version>
     </dependency>
+    <dependency>
+    	<groupId>commons-codec</groupId>
+    	<artifactId>commons-codec</artifactId>
+    	<version>1.10</version>
+    </dependency>
   </dependencies>
   <build>
     <finalName>swd</finalName>

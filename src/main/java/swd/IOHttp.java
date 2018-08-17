@@ -20,9 +20,9 @@ public class IOHttp {
             sb.append(line);  
           
         //将json字符串转换为json对象  
-//        GZipUntils gzip=new GZipUntils();
-//        String re=gzip.Gzip2S(sb.toString());
-        JSONObject json=JSONObject.fromObject(sb.toString());  
+        GZipUntils gzip=new GZipUntils();
+        String re=gzip.Gzip2S(sb.toString());
+        JSONObject json=JSONObject.fromObject(re);  
         
         return json;
 	}

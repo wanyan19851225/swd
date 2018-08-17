@@ -39,7 +39,7 @@ public class ExecuteRequest {
 			out.write(send.toString());
 			break;
 		}
-		case 102:{
+		case 102:{		//查询索引
 			HandleLucene handle=new HandleLucene();
 			//Map<String,Integer> fre=handle.GetTermFreq(Paths.repositorypath);
 			Map<String,String[]> fre=handle.GetFileInfo(Paths.repositorypath);
@@ -91,7 +91,7 @@ public class ExecuteRequest {
 	        ServletDemo.item.put(s);
 			break;
 		}
-		case 104:{
+		case 104:{		//删除索引
 	        JSONArray objarry=j.getJSONArray("fileslist");
 	        JSONObject tem=new JSONObject();
 	        JSONObject send=new JSONObject();
@@ -107,7 +107,7 @@ public class ExecuteRequest {
 	        }
 			break;
 		}
-		case 105:{
+		case 105:{		//导入检索
 			String file=j.getString("file");
 			//System.out.println(file);
 			HandleLucene handle=new HandleLucene();  
