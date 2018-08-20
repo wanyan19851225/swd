@@ -72,134 +72,26 @@ public class HandleLucene {
 	private FSDirectory dir;
 	
 	/*
-	 * 扫描文件，建立索引文件
-	 *
-	 * @params fdir
-	 * 				文件夹
-	 * 		   indexpath
-	 * 				索引文件存储位置
-	 * @return Integer	
-	 * 				返回所有文件的索引数
-	 * 
-	 * @2017-11-1
-	 * 			修改返回参数为Integer,返回所有文件的索引数
-	 * @2017-11-7
-	 * 			增加对自定义文档和正式格式法条的判断  
-	 * @2017-11-10
-	 *          修改file字段的索引选项，由IndexOptions.NONE改为IndexOptions.DOCS,不建立索引改为只对doc建立索引，这样能够根据file字段删除索引
-	 * @2017-11-17
-	 * 			修复当文件夹中没有法条文档时，创建空索引的bug
-	 * 			增加调用GetIndexOflaw或者GetIndexOfdocment后，是否为空的判断，如果为空则跳过不建立索引
-	 *			增加对path字段，增加NumericDocValuesField字段，用于排序
-	 *          
-	 */
-/*	
-	public Integer CreateIndex(String fdir,String indexpath) throws IOException{
-		
-		File[] files = new File(fdir).listFiles();
-		
-		int filesnum=files.length;
-		
-		int totalofindex=0;
-		
-		if(filesnum!=0){		//判断文件夹下是否有法条文档
-		
-			Path inpath=Paths.get(indexpath);
-				
-			Analyzer analyzer = new StandardAnalyzer();		//创建标准分词器
-	
-			FSDirectory fsdir=FSDirectory.open(inpath);		//创建磁盘索引文件
-		
-			RAMDirectory ramdir=new RAMDirectory();		//创建内存索引文件
-	
-			IndexWriterConfig ramconfig = new IndexWriterConfig(analyzer);
-		
-			IndexWriter ramiwriter = new IndexWriter(ramdir,ramconfig);		//创建内存IndexWriter
-		
-			IOWord ioword=new IOWord();
-		
-			for(int i=0;i<files.length;i++){
-			
-				String fname=files[i].getName().split("\\.")[0];
-				String check=fname.substring(fname.length()-2,fname.length());
-				Map<Integer,String> law=new HashMap<Integer,String>();
-			
-				if(check.contains("�?")||check.contains("条例")||check.contains("草案")){
-			
-					law=ioword.GetIndexOflaw(files[i]);
-				}
-				else{
-					law=ioword.GetIndexOfdocment(files[i]);
-				}
-				
-			
-				if(totalofindex==-1)
-					totalofindex=0;
-				
-				totalofindex+=law.size();
-				
-				if(!law.isEmpty()){
-			
-					for (Integer key:law.keySet()){ 
-				
-//						String laws=law.get(302011);
-				
-//						System.out.println(laws);
-					
-						Document doc=new Document();		//创建Document,每一个发条新建一�?		
-						FieldType fieldtype=new FieldType();
-						fieldtype.setIndexOptions(IndexOptions.DOCS);
-						fieldtype.setStored(true);		
-						fieldtype.setTokenized(false);
-						doc.add(new Field("file",files[i].getName(),fieldtype));		//文档名称存储，不分词
-						doc.add(new NumericDocValuesField("path",key));
-						doc.add(new IntPoint("path",key));		//法条索引以Int类型存储
-						doc.add(new StoredField("path",key));
-						doc.add(new Field("law",law.get(key),TextField.TYPE_STORED));		//法条内容索引、分词，存储
-		    	
-						ramiwriter.addDocument(doc);		//将法条索引添加到内存索引�?			  
-					}
-				
-			}
-				else if(totalofindex==0)
-					totalofindex=-1;
-		
-			}	
-			ramiwriter.close();
-		
-			IndexWriterConfig fsconfig=new IndexWriterConfig(analyzer); 
-			fsconfig.setOpenMode(IndexWriterConfig.OpenMode.CREATE);
-			IndexWriter fsiwriter=new IndexWriter(fsdir,fsconfig);   
-			fsiwriter.addIndexes(ramdir); 		//程序结束后，将内存索引写入到磁盘索引�?
-			fsiwriter.close();
-		}
-		else
-			totalofindex=-1;
-        return totalofindex;
-	}
-*/
-	
-	/*
 	 *
 	 * Copyright @ 2017 Beijing Beidouht Co. Ltd. 
 	 * All right reserved. 
 	 * @author: wanyan 
 	 * date: 2017-10-29 
 	 * 
-	 * 该方法与使用单一查询方式
+	 * 璇ユ柟娉曚笌浣跨敤鍗曚竴鏌ヨ鏂瑰紡
 	 *
 	 * @params indexpath
-	 * 				索引文件�?在目�?
+	 * 				绱㈠紩鏂囦欢锟�?鍦ㄧ洰锟�?
 	 * 			keywords 
-	 * 				从JTextField获取用户输入的关键字
+	 * 				浠嶫TextField鑾峰彇鐢ㄦ埛杈撳叆鐨勫叧閿瓧
 	 * 			top
-	 * 				从JRadio获取用户选择的搜索条数，在索引文件中根据相关度排序，返回前top�?
+	 * 				浠嶫Radio鑾峰彇鐢ㄦ埛閫夋嫨鐨勬悳绱㈡潯鏁帮紝鍦ㄧ储寮曟枃浠朵腑鏍规嵁鐩稿叧搴︽帓搴忥紝杩斿洖鍓峵op锟�?
 	 * 			
 	 * @return Map<Stirng,List<String[]>>
-	 * 				将搜索结果以Map<文件名，[章节，法条]>的映射关系，返回查询结果		   
+	 * 				灏嗘悳绱㈢粨鏋滀互Map<鏂囦欢鍚嶏紝[绔犺妭锛屾硶鏉>鐨勬槧灏勫叧绯伙紝杩斿洖鏌ヨ缁撴灉		   
 	 * 						  
 	 * @2017-10-31
-	 * 				修改高亮截取的默认字符数，修改为根据法条内容的字符数显示
+	 * 				淇敼楂樹寒鎴彇鐨勯粯璁ゅ瓧绗︽暟锛屼慨鏀逛负鏍规嵁娉曟潯鍐呭鐨勫瓧绗︽暟鏄剧ず
 	 */
 	
 	public Map<String,List<String[]>> GetSearch(String indexpath,String keywords,int top) throws ParseException, IOException, InvalidTokenOffsetsException{
@@ -210,13 +102,13 @@ public class HandleLucene {
 		
 		try{
 		
-		FSDirectory fsdir=FSDirectory.open(inpath);		//创建磁盘索引文件
+		FSDirectory fsdir=FSDirectory.open(inpath);		//鍒涘缓纾佺洏绱㈠紩鏂囦欢
 		
 		IOContext iocontext=new IOContext();
 
-		RAMDirectory ramdir=new RAMDirectory(fsdir,iocontext);		//创建内存索引文件，并将磁盘索引文件放到内存中
+		RAMDirectory ramdir=new RAMDirectory(fsdir,iocontext);		//鍒涘缓鍐呭瓨绱㈠紩鏂囦欢锛屽苟灏嗙鐩樼储寮曟枃浠舵斁鍒板唴瀛樹腑
 		
-		Analyzer analyzer=new StandardAnalyzer();		//创建标准分词�?
+		Analyzer analyzer=new StandardAnalyzer();		//鍒涘缓鏍囧噯鍒嗚瘝锟�?
 
 		IndexReader indexreader=DirectoryReader.open(ramdir);
 
@@ -225,13 +117,13 @@ public class HandleLucene {
 //		Term term=new Term("law",keywords);
 		
 //		TermQuery termquery=new TermQuery(term);
-//		模糊查询		
+//		妯＄硦鏌ヨ		
 //		FuzzyQuery fuzzquery=new FuzzyQuery(term);
-// 		短语查询		
+// 		鐭鏌ヨ		
 //		 PhraseQuery.Builder builder = new PhraseQuery.Builder();
 //		 builder.add(term);
 //		 PhraseQuery phrasequery=builder.build();
-//		查询分析�?	
+//		鏌ヨ鍒嗘瀽锟�?	
 			
         QueryParser parser=new QueryParser("law", analyzer);
            
@@ -247,12 +139,12 @@ public class HandleLucene {
         	return null;
         }
         
-        //此处加入的是搜索结果的高亮部�?
-        SimpleHTMLFormatter simpleHTMLFormatter = new SimpleHTMLFormatter("<b><font color=red>","</font></b>"); //如果不指定参数的话，默认是加粗，�?<b><b/>
+        //姝ゅ鍔犲叆鐨勬槸鎼滅储缁撴灉鐨勯珮浜儴锟�?
+        SimpleHTMLFormatter simpleHTMLFormatter = new SimpleHTMLFormatter("<b><font color=red>","</font></b>"); //濡傛灉涓嶆寚瀹氬弬鏁扮殑璇濓紝榛樿鏄姞绮楋紝锟�?<b><b/>
         QueryScorer scorer = new QueryScorer(query);//计算得分，会初始化一个查询结果最高的得分
-//        Fragmenter fragmenter = new SimpleSpanFragmenter(scorer); //根据这个得分计算出一个片�?
+//        Fragmenter fragmenter = new SimpleSpanFragmenter(scorer); //鏍规嵁杩欎釜寰楀垎璁＄畻鍑轰竴涓墖锟�?
         Highlighter highlighter = new Highlighter(simpleHTMLFormatter, scorer);
- //       highlighter.setTextFragmenter(fragmenter); //设置�?下要显示的片�?
+ //       highlighter.setTextFragmenter(fragmenter); //璁剧疆锟�?涓嬭鏄剧ず鐨勭墖锟�?
   
         for(int i=0;i<num;i++){
         	
@@ -260,8 +152,11 @@ public class HandleLucene {
         	
     		String temp=hitdoc.get("file");
     		String indexlaws[]=new String[2];
-    		Integer index=Integer.valueOf(hitdoc.get("path"));		
-    		indexlaws[0]="第"+index/100000+"章"+" ";
+    		Integer index=Integer.valueOf(hitdoc.get("path"));
+    		if(index/100000==999)		//判断章段落的索引号是否为999,当索引号为999时，表明没有章段落，索引号设置为0
+    			indexlaws[0]="第"+0+"章"+"&emsp";
+    		else
+    			indexlaws[0]="第"+index/100000+"章"+" ";
     		index=index%100000;
     		indexlaws[0]+="第"+index/1000+"节";
     		String laws=hitdoc.get("law");
@@ -307,25 +202,25 @@ public class HandleLucene {
 	 * @author: wanyan 
 	 * date: 2017-10-31 
 	 * 
-	 * 该方法与GetSearch功能�?致，直接返回法条内容，只是可以使用多条件、多域进行查�?
+	 * 璇ユ柟娉曚笌GetSearch鍔熻兘锟�?鑷达紝鐩存帴杩斿洖娉曟潯鍐呭锛屽彧鏄彲浠ヤ娇鐢ㄥ鏉′欢銆佸鍩熻繘琛屾煡锟�?
 	 *
 	 * @params indexpath
-	 * 				索引文件�?在目�?
+	 * 				绱㈠紩鏂囦欢锟�?鍦ㄧ洰锟�?
 	 * 			keywords 
-	 * 				从JTextField获取用户输入的多个关键字,使用String[]方式传�?�，[关键字，查询条件]
+	 * 				浠嶫TextField鑾峰彇鐢ㄦ埛杈撳叆鐨勫涓叧閿瓧,浣跨敤String[]鏂瑰紡浼狅拷?锟斤紝[鍏抽敭瀛楋紝鏌ヨ鏉′欢]
 	 * 			top
-	 * 				从JRadio获取用户选择的搜索条数，在索引文件中根据相关度排序，返回前top�?
+	 * 				浠嶫Radio鑾峰彇鐢ㄦ埛閫夋嫨鐨勬悳绱㈡潯鏁帮紝鍦ㄧ储寮曟枃浠朵腑鏍规嵁鐩稿叧搴︽帓搴忥紝杩斿洖鍓峵op锟�?
 	 * 			
 	 * @return Map<Stirng,List<String[]>>
-	 * 				将搜索结果以Map<文件名，[章节，法条]>的映射关系，返回查询结果		   
+	 * 				灏嗘悳绱㈢粨鏋滀互Map<鏂囦欢鍚嶏紝[绔犺妭锛屾硶鏉>鐨勬槧灏勫叧绯伙紝杩斿洖鏌ヨ缁撴灉		   
 	 * 						  
 	 * @2017-10-31
-	 * 			修改使用BooleanQuery方式实现多条件查�?
+	 * 			淇敼浣跨敤BooleanQuery鏂瑰紡瀹炵幇澶氭潯浠舵煡锟�?
 	 * @2017-11-1
-	 * 			修改同时支持单条件查询和多条件查�?
-	 * 			修改使用查询分析器QueryParser实现多域、多字段、多条件查询
+	 * 			淇敼鍚屾椂鏀寔鍗曟潯浠舵煡璇㈠拰澶氭潯浠舵煡锟�?
+	 * 			淇敼浣跨敤鏌ヨ鍒嗘瀽鍣≦ueryParser瀹炵幇澶氬煙銆佸瀛楁銆佸鏉′欢鏌ヨ
 	 * @2017-11-16
-	 * 			修改使用MultiFieldQueryParser类实现多字段、多条件查询
+	 * 			淇敼浣跨敤MultiFieldQueryParser绫诲疄鐜板瀛楁銆佸鏉′欢鏌ヨ
 	 * 
 	 */
 	
@@ -335,13 +230,13 @@ public class HandleLucene {
 		
 		Path inpath=Paths.get(indexpath);
 		
-		FSDirectory fsdir=FSDirectory.open(inpath);		//创建磁盘索引文件
+		FSDirectory fsdir=FSDirectory.open(inpath);		//鍒涘缓纾佺洏绱㈠紩鏂囦欢
 		
 		IOContext iocontext=new IOContext();
 
-		RAMDirectory ramdir=new RAMDirectory(fsdir,iocontext);		//创建内存索引文件，并将磁盘索引文件放到内存中
+		RAMDirectory ramdir=new RAMDirectory(fsdir,iocontext);		//鍒涘缓鍐呭瓨绱㈠紩鏂囦欢锛屽苟灏嗙鐩樼储寮曟枃浠舵斁鍒板唴瀛樹腑
 		
-		Analyzer analyzer=new StandardAnalyzer();		//创建标准分词�?
+		Analyzer analyzer=new StandardAnalyzer();		//鍒涘缓鏍囧噯鍒嗚瘝锟�?
 
 		IndexReader indexreader=DirectoryReader.open(ramdir);
 
@@ -405,12 +300,12 @@ public class HandleLucene {
         	return null;
         }
         
-        //此处加入的是搜索结果的高亮部�?
-        SimpleHTMLFormatter simpleHTMLFormatter = new SimpleHTMLFormatter("<b><font color=red>","</font></b>"); //如果不指定参数的话，默认是加粗，�?<b><b/>
-        QueryScorer scorer = new QueryScorer(query);//计算得分，会初始化一个查询结果最高的得分
-        Fragmenter fragmenter = new SimpleSpanFragmenter(scorer); //根据这个得分计算出一个片�?
+        //姝ゅ鍔犲叆鐨勬槸鎼滅储缁撴灉鐨勯珮浜儴锟�?
+        SimpleHTMLFormatter simpleHTMLFormatter = new SimpleHTMLFormatter("<b><font color=red>","</font></b>"); //濡傛灉涓嶆寚瀹氬弬鏁扮殑璇濓紝榛樿鏄姞绮楋紝锟�?<b><b/>
+        QueryScorer scorer = new QueryScorer(query);//璁＄畻寰楀垎锛屼細鍒濆鍖栦竴涓煡璇㈢粨鏋滄渶楂樼殑寰楀垎
+        Fragmenter fragmenter = new SimpleSpanFragmenter(scorer); //鏍规嵁杩欎釜寰楀垎璁＄畻鍑轰竴涓墖锟�?
         Highlighter highlighter = new Highlighter(simpleHTMLFormatter, scorer);
-        highlighter.setTextFragmenter(fragmenter); //设置�?下要显示的片�?
+        highlighter.setTextFragmenter(fragmenter); //璁剧疆锟�?涓嬭鏄剧ず鐨勭墖锟�?
   
         for(int i=0;i<num;i++){
         	
@@ -418,8 +313,11 @@ public class HandleLucene {
         	
     		String temp=hitdoc.get("file");
     		String indexlaws[]=new String[2];
-    		Integer index=Integer.valueOf(hitdoc.get("path"));		
-    		indexlaws[0]="第"+index/100000+"章"+"&emsp";
+    		Integer index=Integer.valueOf(hitdoc.get("path"));
+    		if(index/100000==999)		//判断章段落的索引号是否为999,当索引号为999时，表明没有章段落，索引号设置为0
+    			indexlaws[0]="第"+0+"章"+"&emsp";
+    		else
+    			indexlaws[0]="第"+index/100000+"章"+"&emsp";
     		index=index%100000;
     		indexlaws[0]+="第"+index/1000+"节";
     		String laws=hitdoc.get("law");
@@ -455,25 +353,25 @@ public class HandleLucene {
 	 * @author: wanyan 
 	 * date: 2017-11-18 
 	 * 
-	 * 该方法与GetSearch功能�?致，直接返回法条内容，只是可以使用多条件、多域进行查�?
+	 * 璇ユ柟娉曚笌GetSearch鍔熻兘锟�?鑷达紝鐩存帴杩斿洖娉曟潯鍐呭锛屽彧鏄彲浠ヤ娇鐢ㄥ鏉′欢銆佸鍩熻繘琛屾煡锟�?
 	 *
 	 * @params indexpath
-	 * 				索引文件�?在目�?
+	 * 				绱㈠紩鏂囦欢锟�?鍦ㄧ洰锟�?
 	 * 			fields
-	 * 				指定从哪几个字段查询，使用String[]方式传参�?
+	 * 				鎸囧畾浠庡摢鍑犱釜瀛楁鏌ヨ锛屼娇鐢⊿tring[]鏂瑰紡浼犲弬锟�?
 	 * 			range
-	 * 				指定从哪些文档里搜索keywords
+	 * 				鎸囧畾浠庡摢浜涙枃妗ｉ噷鎼滅储keywords
 	 * 			keywords 
-	 * 				从JTextField获取用户输入的多个关键字,使用String方式传�??
+	 * 				浠嶫TextField鑾峰彇鐢ㄦ埛杈撳叆鐨勫涓叧閿瓧,浣跨敤String鏂瑰紡浼狅拷??
 	 * 			top
-	 * 				从JRadio获取用户选择的搜索条数，在索引文件中根据相关度排序，返回前top�?
+	 * 				浠嶫Radio鑾峰彇鐢ㄦ埛閫夋嫨鐨勬悳绱㈡潯鏁帮紝鍦ㄧ储寮曟枃浠朵腑鏍规嵁鐩稿叧搴︽帓搴忥紝杩斿洖鍓峵op锟�?
 	 * 			
 	 * @return Map<Stirng,List<String[]>>
-	 * 				将搜索结果以Map<文件名，[章节，法条]>的映射关系，返回查询结果		   
+	 * 				灏嗘悳绱㈢粨鏋滀互Map<鏂囦欢鍚嶏紝[绔犺妭锛屾硶鏉>鐨勬槧灏勫叧绯伙紝杩斿洖鏌ヨ缁撴灉		   
 	 *
 	 * @2017-11-18
-	 * 			增加List<String>参数，用于指定在哪些文档内查询法�?
-	 * 			修改keywords参数类型为String						  
+	 * 			澧炲姞List<String>鍙傛暟锛岀敤浜庢寚瀹氬湪鍝簺鏂囨。鍐呮煡璇㈡硶锟�?
+	 * 			淇敼keywords鍙傛暟绫诲瀷涓篠tring						  
 	 * 
 	 */
 
@@ -483,13 +381,13 @@ public class HandleLucene {
 		
 		Path inpath=Paths.get(indexpath);
 		
-		FSDirectory fsdir=FSDirectory.open(inpath);		//创建磁盘索引文件
+		FSDirectory fsdir=FSDirectory.open(inpath);		//鍒涘缓纾佺洏绱㈠紩鏂囦欢
 		
 		IOContext iocontext=new IOContext();
 
-		RAMDirectory ramdir=new RAMDirectory(fsdir,iocontext);		//创建内存索引文件，并将磁盘索引文件放到内存中
+		RAMDirectory ramdir=new RAMDirectory(fsdir,iocontext);		//鍒涘缓鍐呭瓨绱㈠紩鏂囦欢锛屽苟灏嗙鐩樼储寮曟枃浠舵斁鍒板唴瀛樹腑
 		
-		Analyzer analyzer=new StandardAnalyzer();		//创建标准分词�?
+		Analyzer analyzer=new StandardAnalyzer();		//鍒涘缓鏍囧噯鍒嗚瘝锟�?
 
 		IndexReader indexreader=DirectoryReader.open(ramdir);
 
@@ -541,16 +439,16 @@ public class HandleLucene {
 		        
 		}
 		        
-		    //此处加入的是搜索结果的高亮部�?
-		SimpleHTMLFormatter simpleHTMLFormatter = new SimpleHTMLFormatter("<b><font color=red>","</font></b>"); //如果不指定参数的话，默认是加粗，�?<b><b/>
+		    //姝ゅ鍔犲叆鐨勬槸鎼滅储缁撴灉鐨勯珮浜儴锟�?
+		SimpleHTMLFormatter simpleHTMLFormatter = new SimpleHTMLFormatter("<b><font color=red>","</font></b>"); //濡傛灉涓嶆寚瀹氬弬鏁扮殑璇濓紝榛樿鏄姞绮楋紝锟�?<b><b/>
 		    
-		QueryScorer scorer = new QueryScorer(query);//计算得分，会初始化一个查询结果最高的得分
+		QueryScorer scorer = new QueryScorer(query);//璁＄畻寰楀垎锛屼細鍒濆鍖栦竴涓煡璇㈢粨鏋滄渶楂樼殑寰楀垎
 		    
-//		Fragmenter fragmenter = new SimpleSpanFragmenter(scorer); //根据这个得分计算出一个片�?
+//		Fragmenter fragmenter = new SimpleSpanFragmenter(scorer); //鏍规嵁杩欎釜寰楀垎璁＄畻鍑轰竴涓墖锟�?
 		    
 		Highlighter highlighter = new Highlighter(simpleHTMLFormatter, scorer);
 
-//          highlighter.setTextFragmenter(fragmenter); //设置�?下要显示的片�?
+//          highlighter.setTextFragmenter(fragmenter); //璁剧疆锟�?涓嬭鏄剧ず鐨勭墖锟�?
 		  
 		for(int i=0;i<num;i++){
 		        	
@@ -558,8 +456,11 @@ public class HandleLucene {
 		        	
 		    String temp=hitdoc.get("file");
 		    String indexlaws[]=new String[2];
-		    Integer index=Integer.valueOf(hitdoc.get("path"));		
-		    indexlaws[0]="第"+index/100000+"章"+"&emsp";
+		    Integer index=Integer.valueOf(hitdoc.get("path"));
+    		if(index/100000==999)		//判断章段落的索引号是否为999,当索引号为999时，表明没有章段落，索引号设置为0
+    			indexlaws[0]="第"+0+"章"+"&emsp";
+    		else
+    			indexlaws[0]="第"+index/100000+"章"+"&emsp";
 		    index=index%100000;
 		    indexlaws[0]+="第"+index/1000+"节";
 		    String laws=hitdoc.get("law");
@@ -610,19 +511,19 @@ public class HandleLucene {
 	 * @author: wanyan 
 	 * date: 2017-11-16 
 	 * 
-	 * 该方法与GetMultipleSearch功能�?致，直接返回法条内容，只能查询单条件、单字段，针对不分词字段进行查询
+	 * 璇ユ柟娉曚笌GetMultipleSearch鍔熻兘锟�?鑷达紝鐩存帴杩斿洖娉曟潯鍐呭锛屽彧鑳芥煡璇㈠崟鏉′欢銆佸崟瀛楁锛岄拡瀵逛笉鍒嗚瘝瀛楁杩涜鏌ヨ
 	 *
 	 * @params indexpath
-	 * 				索引文件�?在目�?
+	 * 				绱㈠紩鏂囦欢锟�?鍦ㄧ洰锟�?
 	 * 			keywords 
-	 * 				从JTextField获取用户输入的关键字
+	 * 				浠嶫TextField鑾峰彇鐢ㄦ埛杈撳叆鐨勫叧閿瓧
 	 * 			top
-	 * 				从JRadio获取用户选择的搜索条数，在索引文件中根据相关度排序，返回前top�?
+	 * 				浠嶫Radio鑾峰彇鐢ㄦ埛閫夋嫨鐨勬悳绱㈡潯鏁帮紝鍦ㄧ储寮曟枃浠朵腑鏍规嵁鐩稿叧搴︽帓搴忥紝杩斿洖鍓峵op锟�?
 	 * 			
 	 * @return Map<Stirng,List<String[]>>
-	 * 				将搜索结果以Map<文件名，[章节，法条]>的映射关系，返回查询结果		   
+	 * 				灏嗘悳绱㈢粨鏋滀互Map<鏂囦欢鍚嶏紝[绔犺妭锛屾硶鏉>鐨勬槧灏勫叧绯伙紝杩斿洖鏌ヨ缁撴灉		   
 	 * @2017-11-17
-	 * 			使用SortField和Sort调用IndexSearch方法,对搜索结果用path字段升序排序						  
+	 * 			浣跨敤SortField鍜孲ort璋冪敤IndexSearch鏂规硶,瀵规悳绱㈢粨鏋滅敤path瀛楁鍗囧簭鎺掑簭						  
 	 * 
 	 */
 	
@@ -633,13 +534,13 @@ public class HandleLucene {
 		
 		Path inpath=Paths.get(indexpath);
 		
-		FSDirectory fsdir=FSDirectory.open(inpath);		//创建磁盘索引文件
+		FSDirectory fsdir=FSDirectory.open(inpath);		//鍒涘缓纾佺洏绱㈠紩鏂囦欢
 		
 		IOContext iocontext=new IOContext();
 
-		RAMDirectory ramdir=new RAMDirectory(fsdir,iocontext);		//创建内存索引文件，并将磁盘索引文件放到内存中
+		RAMDirectory ramdir=new RAMDirectory(fsdir,iocontext);		//鍒涘缓鍐呭瓨绱㈠紩鏂囦欢锛屽苟灏嗙鐩樼储寮曟枃浠舵斁鍒板唴瀛樹腑
 		
-		//Analyzer analyzer=new StandardAnalyzer();		//创建标准分词�?
+		//Analyzer analyzer=new StandardAnalyzer();		//鍒涘缓鏍囧噯鍒嗚瘝锟�?
 
 		IndexReader indexreader=DirectoryReader.open(ramdir);
 
@@ -649,7 +550,7 @@ public class HandleLucene {
 		
 		TermQuery termquery=new TermQuery(term);
 		
-		SortField sortfield=new SortField("path",SortField.Type.INT,false);		//false为升�?
+		SortField sortfield=new SortField("path",SortField.Type.INT,false);		//false涓哄崌锟�?
        
 		Sort sort=new Sort(sortfield);
 		
@@ -695,20 +596,20 @@ public class HandleLucene {
 	 * @author: wanyan 
 	 * date: 2018-1-23 
 	 * 
-	 * �÷�����GetMultipleSearch����һ�£�ֱ�ӷ��ط������ݣ�ֻ�ܲ�ѯ�����������ֶΣ���Բ��ִ��ֶν��в�ѯ
+	 * 锟矫凤拷锟斤拷锟斤拷GetMultipleSearch锟斤拷锟斤拷一锟铰ｏ拷直锟接凤拷锟截凤拷锟斤拷锟斤拷锟捷ｏ拷只锟杰诧拷询锟斤拷锟斤拷锟斤拷锟斤拷锟斤拷锟街段ｏ拷锟斤拷圆锟斤拷执锟斤拷侄谓锟斤拷胁锟窖�
 	 *
 	 * @params indexpath
-	 * 				�����ļ�����Ŀ¼
+	 * 				锟斤拷锟斤拷锟侥硷拷锟斤拷锟斤拷目录
 	 * 			keywords 
-	 * 				��JTextField��ȡ�û�����Ĺؼ���
+	 * 				锟斤拷JTextField锟斤拷取锟矫伙拷锟斤拷锟斤拷墓丶锟斤拷锟�
 	 * 			top
-	 * 				��JRadio��ȡ�û�ѡ��������������������ļ��и�����ض����򣬷���ǰtop��
+	 * 				锟斤拷JRadio锟斤拷取锟矫伙拷选锟斤拷锟斤拷锟斤拷锟斤拷锟斤拷锟斤拷锟斤拷锟斤拷锟斤拷锟斤拷募锟斤拷懈锟斤拷锟斤拷锟截讹拷锟斤拷锟津，凤拷锟斤拷前top锟斤拷
 	 * 			
 	 * @return Map<Stirng,List<String[]>>
-	 * 				�����������Map<�ļ�����[�½ڣ�����]>��ӳ���ϵ�����ز�ѯ���
+	 * 				锟斤拷锟斤拷锟斤拷锟斤拷锟斤拷锟組ap<锟侥硷拷锟斤拷锟斤拷[锟铰节ｏ拷锟斤拷锟斤拷]>锟斤拷映锟斤拷锟较碉拷锟斤拷锟斤拷夭锟窖拷锟斤拷
 	 * 
 	 * Modeified Date:2018-7-26
-	 * 				���ӻ�ȡ������������ߺʹ����������������ֶ�ֵ������Map<�ļ���,[�½�,����,����,����]>��ӳ���ϵ,���ز�ѯ���
+	 * 				锟斤拷锟接伙拷取锟斤拷锟斤拷锟斤拷锟斤拷锟斤拷锟斤拷吆痛锟斤拷锟斤拷锟斤拷锟斤拷锟斤拷锟斤拷锟斤拷锟斤拷侄锟街碉拷锟斤拷锟斤拷锟組ap<锟侥硷拷锟斤拷,[锟铰斤拷,锟斤拷锟斤拷,锟斤拷锟斤拷,锟斤拷锟斤拷]>锟斤拷映锟斤拷锟较�,锟斤拷锟截诧拷询锟斤拷锟�
 	 * 		   					  
 	 * 
 	 */
@@ -721,13 +622,13 @@ public class HandleLucene {
 		
 		Path inpath=Paths.get(indexpath);
 		
-		FSDirectory fsdir=FSDirectory.open(inpath);		//�������������ļ�
+		FSDirectory fsdir=FSDirectory.open(inpath);		//锟斤拷锟斤拷锟斤拷锟斤拷锟斤拷锟斤拷锟侥硷拷
 		
 		IOContext iocontext=new IOContext();
 
-		RAMDirectory ramdir=new RAMDirectory(fsdir,iocontext);		//�����ڴ������ļ����������������ļ��ŵ��ڴ���
+		RAMDirectory ramdir=new RAMDirectory(fsdir,iocontext);		//锟斤拷锟斤拷锟节达拷锟斤拷锟斤拷锟侥硷拷锟斤拷锟斤拷锟斤拷锟斤拷锟斤拷锟斤拷锟斤拷锟侥硷拷锟脚碉拷锟节达拷锟斤拷
 		
-//		Analyzer analyzer=new StandardAnalyzer();		//������׼�ִ���
+//		Analyzer analyzer=new StandardAnalyzer();		//锟斤拷锟斤拷锟斤拷准锟街达拷锟斤拷
 
 		IndexReader indexreader=DirectoryReader.open(ramdir);
 
@@ -737,7 +638,7 @@ public class HandleLucene {
 		
 		TermQuery termquery=new TermQuery(term);
 		
-		SortField sortfield=new SortField("path",SortField.Type.INT,false);		//falseΪ����
+		SortField sortfield=new SortField("path",SortField.Type.INT,false);		//false为锟斤拷锟斤拷
       
 		Sort sort=new Sort(sortfield);
 	
@@ -760,16 +661,18 @@ public class HandleLucene {
     		   String indexlaws[]=new String[4];
    			
     		   Integer index=Integer.valueOf(hitdoc.get("path"));		
-   		
-    		   indexlaws[0]="第"+index/100000+"章"+" ";
+	    		if(index/100000==999)		//判断章段落的索引号是否为999,当索引号为999时，表明没有章段落，索引号设置为0
+	    			indexlaws[0]="第"+0+"章"+" ";
+	    		else
+	    			indexlaws[0]="第"+index/100000+"章"+" ";
    		
     		   index=index%100000;
    		
     		   indexlaws[0]+="第"+index/1000+"节";
    		
     		   String laws=hitdoc.get("law");
-    		   String author=hitdoc.get("author");	//��ȡ��������
-    		   String time=hitdoc.get("time");		//��ȡ������������
+    		   String author=hitdoc.get("author");	//锟斤拷取锟斤拷锟斤拷锟斤拷锟斤拷
+    		   String time=hitdoc.get("time");		//锟斤拷取锟斤拷锟斤拷锟斤拷锟斤拷锟斤拷锟斤拷
    		
     		   if(laws!=null){
        		
@@ -802,16 +705,16 @@ public class HandleLucene {
 	 * @author: wanyan 
 	 * date: 2017-11-10 
 	 * 
-	 * DeleteIndex方法根据给定文档名，删除索引
+	 * DeleteIndex鏂规硶鏍规嵁缁欏畾鏂囨。鍚嶏紝鍒犻櫎绱㈠紩
 	 *
 	 * @params filename
-	 * 				文档名称
+	 * 				鏂囨。鍚嶇О
 	 * 			indexpath 
-	 * 				索引文件存放目录	
+	 * 				绱㈠紩鏂囦欢瀛樻斁鐩綍	
 	 * @return void
 	 * 
 	 * @2017-11-15
-	 * 			使用方法forceMergeDeletes()，实现立即删�?
+	 * 			浣跨敤鏂规硶forceMergeDeletes()锛屽疄鐜扮珛鍗冲垹锟�?
 	 * 				   				
 	 * 
 	 */
@@ -837,26 +740,26 @@ public class HandleLucene {
 	 * @author: wanyan 
 	 * date: 2017-11-10 
 	 * 
-	 * GetTermFreq方法在根据file字段中，文档名称出现的次数，获取该文档中索引的法条�?�数
+	 * GetTermFreq鏂规硶鍦ㄦ牴鎹甪ile瀛楁涓紝鏂囨。鍚嶇О鍑虹幇鐨勬鏁帮紝鑾峰彇璇ユ枃妗ｄ腑绱㈠紩鐨勬硶鏉★拷?锟芥暟
 	 *
 	 * @params indexpath 
-	 * 				索引文件存放目录
+	 * 				绱㈠紩鏂囦欢瀛樻斁鐩綍
 	 * 				
 	 * @return Map<String,Integer>
-	 * 				返回文档中法条�?�数�?<文档名称，法条�?�数>
+	 * 				杩斿洖鏂囨。涓硶鏉★拷?锟芥暟锟�?<鏂囨。鍚嶇О锛屾硶鏉★拷?锟芥暟>
 	 * 
 	 * @2017-11-15
-	 * 			修改为使用TermsEnum类获取词�?
-	 * 			修复当没有索引文件时，catch报错异常，并进行弹框提示			   				
+	 * 			淇敼涓轰娇鐢═ermsEnum绫昏幏鍙栬瘝锟�?
+	 * 			淇褰撴病鏈夌储寮曟枃浠舵椂锛宑atch鎶ラ敊寮傚父锛屽苟杩涜寮规鎻愮ず			   				
 	 * 
 	 */
 	
 	public Map<String,Integer> GetTermFreq(String indexpath){
 		Map<String,Integer> res=new HashMap<String,Integer>();
 		Path inpath=Paths.get(indexpath);
-//		Analyzer analyzer=new StandardAnalyzer();		//创建标准分词�?
+//		Analyzer analyzer=new StandardAnalyzer();		//鍒涘缓鏍囧噯鍒嗚瘝锟�?
 		try{
-			FSDirectory fsdir=FSDirectory.open(inpath);		//创建磁盘索引文件
+			FSDirectory fsdir=FSDirectory.open(inpath);		//鍒涘缓纾佺洏绱㈠紩鏂囦欢
 			IOContext iocontext=new IOContext();
 			RAMDirectory ramdir=new RAMDirectory(fsdir,iocontext);		
 			IndexReader indexreader=DirectoryReader.open(ramdir);
@@ -891,7 +794,7 @@ public class HandleLucene {
 				}
 			}
         
-//			int dd=indexreader.docFreq(new Term("file","劳动人事争议仲裁办案规则（新）法.doc"));
+//			int dd=indexreader.docFreq(new Term("file","鍔冲姩浜轰簨浜夎浠茶鍔炴瑙勫垯锛堟柊锛夋硶.doc"));
 			
 //			System.out.println(dd);
 			for(String key:res.keySet()){
@@ -924,20 +827,20 @@ public class HandleLucene {
 	 * @author: wanyan 
 	 * date: 2018-7-26 
 	 * 
-	 * GetFileInfo���ڻ�ȡ�ĵ����ƣ����ߣ��������ڣ������������ĵ���Ϣ���÷������ȵ���GetTermFreq��ȡ�ĵ����ƺͷ�������,Ȼ��ʹ��TermQuery������ʽ,��ѯ�ĵ�������,�ĵ���������
+	 * GetFileInfo锟斤拷锟节伙拷取锟侥碉拷锟斤拷锟狡ｏ拷锟斤拷锟竭ｏ拷锟斤拷锟斤拷锟斤拷锟节ｏ拷锟斤拷锟斤拷锟斤拷锟斤拷锟斤拷锟侥碉拷锟斤拷息锟斤拷锟矫凤拷锟斤拷锟斤拷锟饺碉拷锟斤拷GetTermFreq锟斤拷取锟侥碉拷锟斤拷锟狡和凤拷锟斤拷锟斤拷锟斤拷,然锟斤拷使锟斤拷TermQuery锟斤拷锟斤拷锟斤拷式,锟斤拷询锟侥碉拷锟斤拷锟斤拷锟斤拷,锟侥碉拷锟斤拷锟斤拷锟斤拷锟斤拷
 	 *
 	 * @params indexpath 
-	 * 				�����ļ�λ��
+	 * 				锟斤拷锟斤拷锟侥硷拷位锟斤拷
 	 * 				
 	 * @return Map<String,String[]>
-	 * 				���������Map<�ĵ����ƣ�[���ߣ��������ڣ���������]>����ʽ����
+	 * 				锟斤拷锟斤拷锟斤拷锟斤拷锟組ap<锟侥碉拷锟斤拷锟狡ｏ拷[锟斤拷锟竭ｏ拷锟斤拷锟斤拷锟斤拷锟节ｏ拷锟斤拷锟斤拷锟斤拷锟斤拷]>锟斤拷锟斤拷式锟斤拷锟斤拷
 	 * 	   				
 	 * 
 	 */
 	
 	public Map<String,String[]> GetFileInfo(String indexpath){
 		Map<String,String[]> res=new HashMap<String,String[]>();
-		Map<String,Integer> f=this.GetTermFreq(indexpath);	//�洢�ĵ����ơ�����������Map<�ĵ����ƣ���������>
+		Map<String,Integer> f=this.GetTermFreq(indexpath);	//锟芥储锟侥碉拷锟斤拷锟狡★拷锟斤拷锟斤拷锟斤拷锟斤拷锟斤拷Map<锟侥碉拷锟斤拷锟狡ｏ拷锟斤拷锟斤拷锟斤拷锟斤拷>
 		
 		Path inpath=Paths.get(indexpath);
 		
@@ -982,53 +885,6 @@ public class HandleLucene {
 		return res;
 	}
 	
-	public List<Map<String,String>> GetField(String indexpath,String field){
-		List<Map<String,String>> res=new ArrayList<Map<String,String>>();
-		Path path=Paths.get(indexpath);
-		try{
-			FSDirectory fsdir=FSDirectory.open(path);
-			Analyzer analyzer=new StandardAnalyzer();
-			IOContext iocontext=new IOContext();
-			RAMDirectory ramdir=new RAMDirectory(fsdir,iocontext);		
-			IndexReader indexreader=DirectoryReader.open(ramdir);
-			IndexSearcher indexsearcher=new IndexSearcher(indexreader);
-			int top=indexreader.numDocs();
-			if(top!=0){
-				QueryParser parser=new QueryParser(field, analyzer); 
-				parser.setAllowLeadingWildcard(true);
-				Query query=parser.parse("*");
-				TopDocs topdocs=indexsearcher.search(query,top);     
-				ScoreDoc[] hits=topdocs.scoreDocs;
-				int num=hits.length;
-				for(int i=0;i<num;i++){	
-					Document hitdoc=indexsearcher.doc(hits[i].doc);
-					Map<String,String> m=new HashMap<String,String>();
-					m.put("file",hitdoc.get("file"));
-					m.put("author",hitdoc.get("author"));
-					m.put("time",hitdoc.get("time"));
-					m.put("count",hitdoc.get("count"));
-					res.add(m);
-				}      
-			} 
-        ramdir.close();
-        indexreader.close();
-        fsdir.close();
-		}catch (IOException e) {
-			// TODO Auto-generated catch block
-			if(e.getClass().getSimpleName().equals("IndexNotFoundException")){
-				System.out.println("û�д��������ļ�");
-				return res;
-			}
-			else
-				e.printStackTrace();
-		} catch (ParseException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-		return res;
-		
-	}
-	
 	/*
 	 *
 	 * Copyright @ 2017 Beijing Beidouht Co. Ltd. 
@@ -1036,26 +892,26 @@ public class HandleLucene {
 	 * @author: wanyan 
 	 * date: 2017-11-10 
 	 * 
-	 * AddIndex�����ڸ��ݴ��ݵ�file�ֶΣ��������ĵ�׷�ӵ��Ѵ��ڵ������ļ��У����û�������ļ����򴴽������ļ�
+	 * AddIndex锟斤拷锟斤拷锟节革拷锟捷达拷锟捷碉拷file锟街段ｏ拷锟斤拷锟斤拷锟斤拷锟侥碉拷追锟接碉拷锟窖达拷锟节碉拷锟斤拷锟斤拷锟侥硷拷锟叫ｏ拷锟斤拷锟矫伙拷锟斤拷锟斤拷锟斤拷募锟斤拷锟斤拷虼唇锟斤拷锟斤拷锟斤拷募锟�
 	 *
 	 * @params content 
-	 * 				�ѽ�Ҫ׷�ӵķ���������Map�У��ļ���ΪKey,�������浽List<String[]>�У���Ϊvalue,�洢��ʽΪMap<�ļ���������<������������������>>
+	 * 				锟窖斤拷要追锟接的凤拷锟斤拷锟斤拷锟斤拷锟斤拷Map锟叫ｏ拷锟侥硷拷锟斤拷为Key,锟斤拷锟斤拷锟斤拷锟芥到List<String[]>锟叫ｏ拷锟斤拷为value,锟芥储锟斤拷式为Map<锟侥硷拷锟斤拷锟斤拷锟斤拷锟斤拷<锟斤拷锟斤拷锟斤拷锟斤拷锟斤拷锟斤拷锟斤拷锟斤拷锟斤拷>>
 	 * 
 	 * 		   author
-	 * 				�����÷���������
+	 * 				锟斤拷锟斤拷锟矫凤拷锟斤拷锟斤拷锟斤拷锟斤拷
 	 * 			
 	 * 		   time
-	 * 				�����÷���������
+	 * 				锟斤拷锟斤拷锟矫凤拷锟斤拷锟斤拷锟斤拷锟斤拷
 	 * 				
 	 * 		   indexpath
-	 * 				�����ļ�·��
+	 * 				锟斤拷锟斤拷锟侥硷拷路锟斤拷
 	 * 
 	 * @return Integer
-	 * 				������ӵ������ļ��еķ�����
+	 * 				锟斤拷锟斤拷锟斤拷拥锟斤拷锟斤拷锟斤拷募锟斤拷械姆锟斤拷锟斤拷锟�
 	 * 
 	 * Modeified Date:2018-7-25
-	 * 				���Ӳ���author,���ݴ����÷��������ߣ����Բ�����-�洢-���ִʵ���ʽ�洢��Document��
-	 * 				���Ӳ���time,���ݴ����÷��������ڣ����Բ�����-�洢-���ִʵ���ʽ�洢��Document��	   				
+	 * 				锟斤拷锟接诧拷锟斤拷author,锟斤拷锟捷达拷锟斤拷锟矫凤拷锟斤拷锟斤拷锟斤拷锟竭ｏ拷锟斤拷锟皆诧拷锟斤拷锟斤拷-锟芥储-锟斤拷锟街词碉拷锟斤拷式锟芥储锟斤拷Document锟斤拷
+	 * 				锟斤拷锟接诧拷锟斤拷time,锟斤拷锟捷达拷锟斤拷锟矫凤拷锟斤拷锟斤拷锟斤拷锟节ｏ拷锟斤拷锟皆诧拷锟斤拷锟斤拷-锟芥储-锟斤拷锟街词碉拷锟斤拷式锟芥储锟斤拷Document锟斤拷	   				
 	 * 
 	 */
 
@@ -1064,15 +920,15 @@ public class HandleLucene {
 		
 		Path inpath=Paths.get(indexpath);
 
-		Analyzer analyzer = new StandardAnalyzer();		//创建标准分词�?
+		Analyzer analyzer = new StandardAnalyzer();		//鍒涘缓鏍囧噯鍒嗚瘝锟�?
 	
-		FSDirectory fsdir=FSDirectory.open(inpath);		//创建磁盘索引文件
+		FSDirectory fsdir=FSDirectory.open(inpath);		//鍒涘缓纾佺洏绱㈠紩鏂囦欢
 		
-		RAMDirectory ramdir=new RAMDirectory();		//创建内存索引文件
+		RAMDirectory ramdir=new RAMDirectory();		//鍒涘缓鍐呭瓨绱㈠紩鏂囦欢
 	
 		IndexWriterConfig ramconfig = new IndexWriterConfig(analyzer);
 		
-		IndexWriter ramiwriter = new IndexWriter(ramdir,ramconfig);		//创建内存IndexWriter
+		IndexWriter ramiwriter = new IndexWriter(ramdir,ramconfig);		//鍒涘缓鍐呭瓨IndexWriter
 		
 		
 		int totalofindex=0;
@@ -1093,17 +949,17 @@ public class HandleLucene {
 				int count=laws.size();
 				totalofindex=count;
 				for(int i=0;i<count;i++){
-					Document doc=new Document();		//创建Document,每一个发条新建一�?
-					doc.add(new Field("file",entry.getKey(),filetype));		//文档名称存储，不分词
-					//doc.add(new IntPoint("path",Integer.valueOf(laws.get(i)[0])));		//法条索引以Int类型存储
+					Document doc=new Document();		//鍒涘缓Document,姣忎竴涓彂鏉℃柊寤轰竴锟�?
+					doc.add(new Field("file",entry.getKey(),filetype));		//鏂囨。鍚嶇О瀛樺偍锛屼笉鍒嗚瘝
+					//doc.add(new IntPoint("path",Integer.valueOf(laws.get(i)[0])));		//娉曟潯绱㈠紩浠nt绫诲瀷瀛樺偍
 					//doc.add(new StoredField("path",Integer.valueOf(laws.get(i)[0])));
-					doc.add(new Field("author",author,lawtype));		//�洢�÷���������	
-					doc.add(new Field("time",time,lawtype));			//�洢�÷����Ĵ�������
+					doc.add(new Field("author",author,lawtype));		//锟芥储锟矫凤拷锟斤拷锟斤拷锟斤拷锟斤拷	
+					doc.add(new Field("time",time,lawtype));			//锟芥储锟矫凤拷锟斤拷锟侥达拷锟斤拷锟斤拷锟斤拷
 					doc.add(new NumericDocValuesField("path",Integer.valueOf(laws.get(i)[0])));
-					doc.add(new IntPoint("path",Integer.valueOf(laws.get(i)[0])));		//����������Int���ʹ洢
+					doc.add(new IntPoint("path",Integer.valueOf(laws.get(i)[0])));		//锟斤拷锟斤拷锟斤拷锟斤拷锟斤拷Int锟斤拷锟酵存储
 					doc.add(new StoredField("path",Integer.valueOf(laws.get(i)[0])));
-					doc.add(new Field("law",laws.get(i)[1],lawtype));		//发条内容索引、分词，不存�?
-			    	ramiwriter.addDocument(doc);		//将法条索引添加到内存索引�?	
+					doc.add(new Field("law",laws.get(i)[1],lawtype));		//鍙戞潯鍐呭绱㈠紩銆佸垎璇嶏紝涓嶅瓨锟�?
+			    	ramiwriter.addDocument(doc);		//灏嗘硶鏉＄储寮曟坊鍔犲埌鍐呭瓨绱㈠紩锟�?	
 				}	    		  
 			}
 	
@@ -1146,10 +1002,10 @@ public class HandleLucene {
 		FSDirectory dir = FSDirectory.open(inpath);
 		Analyzer analyzer=new StandardAnalyzer();
 		TieredMergePolicy ti=new TieredMergePolicy();
-		ti.setForceMergeDeletesPctAllowed(0);		//����ɾ�������ĺϲ�����Ϊ0����ɾ��segmentʱ���������кϲ�
+		ti.setForceMergeDeletesPctAllowed(0);		//锟斤拷锟斤拷删锟斤拷锟斤拷锟斤拷锟侥合诧拷锟斤拷锟斤拷为0锟斤拷锟斤拷删锟斤拷segment时锟斤拷锟斤拷锟斤拷锟斤拷锟叫合诧拷
     	IndexWriterConfig config=new IndexWriterConfig(analyzer); 
     	config.setOpenMode(IndexWriterConfig.OpenMode.CREATE_OR_APPEND);
-    	config.setMergePolicy(ti);		//���úϲ�����
+    	config.setMergePolicy(ti);		//锟斤拷锟矫合诧拷锟斤拷锟斤拷
     	writer=new IndexWriter(dir,config);
 		
 		}catch (IOException e) {
@@ -1183,19 +1039,19 @@ public class HandleLucene {
 		//List<String[]> contentoflaw=new ArrayList<String[]>();
 //		int num=handle.CreateIndex("D:\\Lucene\\src\\","D:\\Lucene\\index\\");
 //		System.out.println(num);
-//		handle.DeleteIndex("劳动人事争议仲裁办案规则（新）法.doc","D:\\Lucene\\index\\");
+//		handle.DeleteIndex("鍔冲姩浜轰簨浜夎浠茶鍔炴瑙勫垯锛堟柊锛夋硶.doc","D:\\Lucene\\index\\");
 //		fre=handle.GetTermFreq("D:\\Lucene\\index\\");
 //		for(String key:fre.keySet()){
 //			System.out.println(key+":"+fre.get(key));
 //		}
 /*
-		files=handle.ExecuteSearch("D:\\Lucene\\index\\","当事�?",4);
+		files=handle.ExecuteSearch("D:\\Lucene\\index\\","褰撲簨锟�?",4);
 		
 		if(files==null){
-			System.out.println("未搜索到关键�?");
+			System.out.println("鏈悳绱㈠埌鍏抽敭锟�?");
 		}else{
 			for(String key:files.keySet()){
-				System.out.println("文件名："+key);
+				System.out.println("鏂囦欢鍚嶏細"+key);
 				List<Integer> path=files.get(key);
 				System.out.println(path.size());	
 			}
@@ -1205,7 +1061,7 @@ public class HandleLucene {
 		contentoflaw=handle.GetContentOfLawByIndex(files,"D:\\Lucene\\src\\");
 		
 		if(contentoflaw==null){
-			System.out.println("未搜索到关键�?");
+			System.out.println("鏈悳绱㈠埌鍏抽敭锟�?");
 		}else{	
 			for(int i=0;i<contentoflaw.size();i++)
 				System.out.println(contentoflaw.get(i)[0]+" "+contentoflaw.get(i)[1]+" "+contentoflaw.get(i)[2]+" "+contentoflaw.get(i)[3]);
@@ -1213,16 +1069,16 @@ public class HandleLucene {
 */	
 		
 		List<String[]> keywordset=new ArrayList<String[]>();
-		keywordset.add(new String[]{"AND","file","劳动人事争议仲裁办案规则（新）法.doc"});
-//		contentoffiles=handle.GetSearch("D:\\Lucene\\index\\","file:劳动人事争议仲裁办案规则（新）法.doc",1000);
+		keywordset.add(new String[]{"AND","file","鍔冲姩浜轰簨浜夎浠茶鍔炴瑙勫垯锛堟柊锛夋硶.doc"});
+//		contentoffiles=handle.GetSearch("D:\\Lucene\\index\\","file:鍔冲姩浜轰簨浜夎浠茶鍔炴瑙勫垯锛堟柊锛夋硶.doc",1000);
 //		contentoffiles=handle.GetMultipleSearch("D:\\Lucene\\index\\",keywordset,1000);
-		contentoffiles=handle.GetTermSearch("D:\\Lucene\\index\\","劳动人事争议仲裁办案规则（新）法.doc",1000);
+		contentoffiles=handle.GetTermSearch("D:\\Lucene\\index\\","鍔冲姩浜轰簨浜夎浠茶鍔炴瑙勫垯锛堟柊锛夋硶.doc",1000);
 		StringBuffer text=new StringBuffer();
 		for(String key:contentoffiles.keySet()){
 			for(int i=0;i<contentoffiles.get(key).size();i++){
 				text.append("&emsp&emsp");
 				text.append(contentoffiles.get(key).get(i)[1]);
-				text.append("&emsp"+"<i>"+"--摘录�?");
+				text.append("&emsp"+"<i>"+"--摘录自");
 				text.append(key);;
 				text.append("&emsp"+contentoffiles.get(key).get(i)[0]+"</i>");
 				text.append("<br/>");

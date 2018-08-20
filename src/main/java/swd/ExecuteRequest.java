@@ -24,23 +24,20 @@ public class ExecuteRequest {
 		
 	public void Send(JSONObject j,HttpServletResponse response) throws ParseException, IOException, InvalidTokenOffsetsException, InterruptedException{
 		
-//		Map<String,String> r=new HashMap<String,String>();
-//		IOJson.Json2Map(j,r);
-//		JSONObject obj=j.getJSONObject("cmd");
+		HandleLucene handle=new HandleLucene();
+		GZipUntils gz=new GZipUntils();
 		String cmd=j.getString("command");
-//		String cmd=r.get("cmd");
 		Writer out = response.getWriter();
 		switch (Integer.parseInt(cmd)) {
 		case 101:{
-			HandleLucene handle=new HandleLucene();
 			IOJson ioj=new IOJson();
 			Map<String,List<String[]>> content=handle.GetSearch(Paths.repositorypath,j.getString("keywords"),100);
 			JSONObject send=ioj.Map2Json("","101",content);
-			out.write(send.toString());
+	        String body=gz.S2Gzip(send.toString());
+			out.write(body);
 			break;
 		}
 		case 102:{		//查询索引
-			HandleLucene handle=new HandleLucene();
 			//Map<String,Integer> fre=handle.GetTermFreq(Paths.repositorypath);
 			Map<String,String[]> fre=handle.GetFileInfo(Paths.repositorypath);
 	        JSONArray filelist=new JSONArray();
@@ -57,7 +54,8 @@ public class ExecuteRequest {
 	        send.put("token","");
 	        send.put("command","102");
 	        send.put("FileList",filelist);
-	        out.write(send.toString());
+	        String body=gz.S2Gzip(send.toString());
+	        out.write(body);
 	        break;
 		}
 		case 103:{		//提交索引
@@ -80,13 +78,13 @@ public class ExecuteRequest {
 	        indexpath.append(author+"\\");
 	        indexpath.append(UUID.randomUUID().toString().replace("-","")+"\\");
 //	        indexpath.append(j.getString("file"));
-	        HandleLucene handle=new HandleLucene();
 	        int tatol=handle.AddIndex(content,author,df.format(d),indexpath.toString());
 	        JSONObject send=new JSONObject();
 	        send.put("token","");
 	        send.put("command","103");
 	        send.accumulate("result",tatol);
-			out.write(send.toString());
+	        String body=gz.S2Gzip(send.toString());
+			out.write(body);
 			String[] s={"a",indexpath.toString()};
 	        ServletDemo.item.put(s);
 			break;
@@ -98,7 +96,8 @@ public class ExecuteRequest {
 	        send.put("token","");
 	        send.put("command","104");
 	        send.accumulate("result",1);
-			out.write(send.toString());	
+	        String body=gz.S2Gzip(send.toString());
+			out.write(body);	
 	        for(int i=0;i<objarry.size();i++){		
 	        	tem=objarry.getJSONObject(i);
 	        	String[] s={"d",tem.getString("file")};
@@ -109,8 +108,6 @@ public class ExecuteRequest {
 		}
 		case 105:{		//导入检索
 			String file=j.getString("file");
-			//System.out.println(file);
-			HandleLucene handle=new HandleLucene();  
 			Map<String,List<String[]>> content=handle.GetTermSearch(swd.Paths.repositorypath,file);
 			JSONObject send=new JSONObject();
 			if(!content.isEmpty()){
@@ -132,13 +129,13 @@ public class ExecuteRequest {
 	        send.put("command","105");
 	        send.put("file",file);
 	        send.accumulate("result",1);
-	        out.write(send.toString());
+	        String body=gz.S2Gzip(send.toString());
+	        out.write(body);
 	        break;
 		}
 		case 106:{
 			String file=j.getString("file");
-			int top=j.getInt("top");
-			HandleLucene handle=new HandleLucene();  
+			int top=j.getInt("top"); 
 			Map<String,List<String[]>> content=handle.GetTermSearch(swd.Paths.repositorypath,file,top);
 			JSONObject send=new JSONObject();
 			if(!content.isEmpty()){
@@ -166,7 +163,8 @@ public class ExecuteRequest {
 	        send.put("token","");
 	        send.put("command","105");
 	        send.put("file",file);
-	        out.write(send.toString());
+	        String body=gz.S2Gzip(send.toString());
+	        out.write(body);
 	        break;
 		}
 		
