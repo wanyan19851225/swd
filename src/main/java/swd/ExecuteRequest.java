@@ -37,9 +37,9 @@ public class ExecuteRequest {
 			out.write(body);
 			break;
 		}
-		case 102:{		//查询索引
-			//Map<String,Integer> fre=handle.GetTermFreq(Paths.repositorypath);
-			Map<String,String[]> fre=handle.GetFileInfo(Paths.repositorypath);
+		case 102:{		//单条件查询文档信息索引
+			FileIndexs fileindex=new FileIndexs();
+			Map<String,String[]> fre=fileindex.GetFileInfo(Paths.filepath);
 	        JSONArray filelist=new JSONArray();
 			for(Entry<String,String[]> entry: fre.entrySet()){
 				JSONObject tem=new JSONObject();
@@ -75,17 +75,17 @@ public class ExecuteRequest {
 	        Map<String,List<String[]>> content=new HashMap<String,List<String[]>>();
 	        content.put(j.getString("file"),laws);
 	        StringBuffer indexpath=new StringBuffer(Paths.itempath);
-	        indexpath.append(author+"\\");
+	        indexpath.append("\\"+author+"\\");
 	        indexpath.append(UUID.randomUUID().toString().replace("-","")+"\\");
-//	        indexpath.append(j.getString("file"));
-	        int tatol=handle.AddIndex(content,author,df.format(d),indexpath.toString());
+	        ItemIndexs itemindex=new ItemIndexs();
+	        int tatol=itemindex.AddIndexs(content,indexpath.toString());
 	        JSONObject send=new JSONObject();
 	        send.put("token","");
 	        send.put("command","103");
 	        send.accumulate("result",tatol);
 	        String body=gz.S2Gzip(send.toString());
 			out.write(body);
-			String[] s={"a",indexpath.toString()};
+			String[] s={Action.Add,indexpath.toString(),Paths.filepath,j.getString("file"),author,df.format(d),String.valueOf(tatol)};
 	        ServletDemo.item.put(s);
 			break;
 		}
@@ -100,9 +100,8 @@ public class ExecuteRequest {
 			out.write(body);	
 	        for(int i=0;i<objarry.size();i++){		
 	        	tem=objarry.getJSONObject(i);
-	        	String[] s={"d",tem.getString("file")};
+	        	String[] s={Action.Delete,tem.getString("file"),Paths.filepath};
 	        	ServletDemo.item.put(s);
-		       // handle.DeleteIndex(tem.getString("file"),Paths.repositorypath);
 	        }
 			break;
 		}
@@ -133,7 +132,7 @@ public class ExecuteRequest {
 	        out.write(body);
 	        break;
 		}
-		case 106:{
+		case 106:{		//查询文档段落
 			String file=j.getString("file");
 			int top=j.getInt("top"); 
 			Map<String,List<String[]>> content=handle.GetTermSearch(swd.Paths.repositorypath,file,top);
@@ -163,6 +162,39 @@ public class ExecuteRequest {
 	        send.put("token","");
 	        send.put("command","105");
 	        send.put("file",file);
+	        String body=gz.S2Gzip(send.toString());
+	        out.write(body);
+	        break;
+		}
+		case 107:{		//多条件查询文档信息索引	
+			JSONArray objarry=j.getJSONArray("FileList");
+			String keywords=j.getString("keywords");
+	        JSONObject tem=new JSONObject();
+			JSONObject send=new JSONObject();
+			List<String> range=new ArrayList<String>();
+	        for(int i=0;i<objarry.size();i++){		
+	        	tem=objarry.getJSONObject(i);
+	        	range.add(tem.getString("fname"));
+	        }
+	        String[] fields={"file","findex"};
+	        FileIndexs fileindex=new FileIndexs();
+	        Map<String,String[]> finfo=fileindex.QueryFiles(Paths.filepath, fields, range, keywords);
+	        JSONArray FileList=new JSONArray();
+	        if(!finfo.isEmpty()){
+	        	for(Entry<String,String[]> entry: finfo.entrySet()){
+					String[] infos=entry.getValue();
+					JSONObject tem1=new JSONObject();
+					tem1.accumulate("file",entry.getKey());
+					tem1.accumulate("author",infos[0]);
+					tem1.accumulate("time",infos[1]);
+					tem1.accumulate("segments",infos[2]);
+					tem1.accumulate("findex", infos[3]);
+					FileList.add(tem1);
+				} 
+	        }
+	        send.accumulate("FileList", FileList);
+	        send.accumulate("command","107");
+	        send.accumulate("token", "");
 	        String body=gz.S2Gzip(send.toString());
 	        out.write(body);
 	        break;

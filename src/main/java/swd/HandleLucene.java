@@ -705,32 +705,40 @@ public class HandleLucene {
 	 * @author: wanyan 
 	 * date: 2017-11-10 
 	 * 
-	 * DeleteIndex鏂规硶鏍规嵁缁欏畾鏂囨。鍚嶏紝鍒犻櫎绱㈠紩
+	 * DeleteIndex删除仓库中的段落索引成功后，删除文档信息索引
 	 *
-	 * @params filename
-	 * 				鏂囨。鍚嶇О
-	 * 			indexpath 
-	 * 				绱㈠紩鏂囦欢瀛樻斁鐩綍	
-	 * @return void
+	 * @params String[]
+	 * 				以String[操作类型，文档名称，文档信息索引路径]形式传入参数
+	 * @return Boolean
 	 * 
 	 * @2017-11-15
 	 * 			浣跨敤鏂规硶forceMergeDeletes()锛屽疄鐜扮珛鍗冲垹锟�?
-	 * 				   				
+	 * @2018-8-23
+	 * 			修改传入参数为String[]
+	 * 			删除仓库中的段落索引成功后，删除文档信息索引				   				
 	 * 
 	 */
 
-	public void DeleteIndex(String s) throws IOException{
-		if(writer!=null){
-			Term t=new Term("file",s);								
-			writer.deleteDocuments(t);								
-			writer.forceMergeDeletes();
-			writer.commit();
+	public Boolean DeleteRepoIndex(String[] s){
+		Boolean f=true;
+		if(writer!=null){					
+			try {
+				Term t=new Term("file",s[1]);
+				writer.deleteDocuments(t);
+				writer.forceMergeDeletes();
+				writer.commit();
+				
+				FileIndexs fileindex=new FileIndexs();
+				f=fileindex.DeleteFile(s[1],s[2]);
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				f=false;
+				e.printStackTrace();
+			}								
 		}
-		/*
-		String[] s={"d",filename};
-		
-		ServletDemo.blockingQueue.put(s);
-		*/	        	
+		else
+			f=false;
+		return f;
 	}
 
 	/*
@@ -838,52 +846,52 @@ public class HandleLucene {
 	 * 
 	 */
 	
-	public Map<String,String[]> GetFileInfo(String indexpath){
-		Map<String,String[]> res=new HashMap<String,String[]>();
-		Map<String,Integer> f=this.GetTermFreq(indexpath);	//锟芥储锟侥碉拷锟斤拷锟狡★拷锟斤拷锟斤拷锟斤拷锟斤拷锟斤拷Map<锟侥碉拷锟斤拷锟狡ｏ拷锟斤拷锟斤拷锟斤拷锟斤拷>
-		
-		Path inpath=Paths.get(indexpath);
-		
-		try{
-			FSDirectory fsdir=FSDirectory.open(inpath);		
-			IOContext iocontext=new IOContext();
-			RAMDirectory ramdir=new RAMDirectory(fsdir,iocontext);		
-			IndexReader indexreader=DirectoryReader.open(ramdir);
-			IndexSearcher indexsearcher=new IndexSearcher(indexreader);
-			
-			for(String file: f.keySet()){
-			
-				Term term=new Term("file",file);
-				TermQuery termquery=new TermQuery(term);				
-			    TopDocs topdocs=indexsearcher.search(termquery,1); 			       
-			    ScoreDoc[] hits=topdocs.scoreDocs;
-	    		Document hitdoc=indexsearcher.doc(hits[0].doc);
-	    	    String finfo[]=new String[3];
-	    	    finfo[0]=hitdoc.get("author");
-	    	    finfo[1]=hitdoc.get("time");
-	    	    finfo[2]=String.valueOf(f.get(file));
-	    	    res.put(file,finfo);		    
-			}
-		
-       
-			ramdir.close();
-			indexreader.close();       
-			fsdir.close();
-		
-		}catch (IOException e) {
-			// TODO Auto-generated catch block
-			if(e.getClass().getSimpleName().equals("IndexNotFoundException")){
-				System.out.println("检索文档作者和文档创建日期时失败，原因：未检索到索引文件");
-			//	e.printStackTrace();
-				return res;
-			}
-			
-			else
-				e.printStackTrace();
-		}
-		
-		return res;
-	}
+//	public Map<String,String[]> GetFileInfo(String indexpath){
+//		Map<String,String[]> res=new HashMap<String,String[]>();
+//		Map<String,Integer> f=this.GetTermFreq(indexpath);	//锟芥储锟侥碉拷锟斤拷锟狡★拷锟斤拷锟斤拷锟斤拷锟斤拷锟斤拷Map<锟侥碉拷锟斤拷锟狡ｏ拷锟斤拷锟斤拷锟斤拷锟斤拷>
+//		
+//		Path inpath=Paths.get(indexpath);
+//		
+//		try{
+//			FSDirectory fsdir=FSDirectory.open(inpath);		
+//			IOContext iocontext=new IOContext();
+//			RAMDirectory ramdir=new RAMDirectory(fsdir,iocontext);		
+//			IndexReader indexreader=DirectoryReader.open(ramdir);
+//			IndexSearcher indexsearcher=new IndexSearcher(indexreader);
+//			
+//			for(String file: f.keySet()){
+//			
+//				Term term=new Term("file",file);
+//				TermQuery termquery=new TermQuery(term);				
+//			    TopDocs topdocs=indexsearcher.search(termquery,1); 			       
+//			    ScoreDoc[] hits=topdocs.scoreDocs;
+//	    		Document hitdoc=indexsearcher.doc(hits[0].doc);
+//	    	    String finfo[]=new String[3];
+//	    	    finfo[0]=hitdoc.get("author");
+//	    	    finfo[1]=hitdoc.get("time");
+//	    	    finfo[2]=String.valueOf(f.get(file));
+//	    	    res.put(file,finfo);		    
+//			}
+//		
+//       
+//			ramdir.close();
+//			indexreader.close();       
+//			fsdir.close();
+//		
+//		}catch (IOException e) {
+//			// TODO Auto-generated catch block
+//			if(e.getClass().getSimpleName().equals("IndexNotFoundException")){
+//				System.out.println("检索文档作者和文档创建日期时失败，原因：未检索到索引文件");
+//			//	e.printStackTrace();
+//				return res;
+//			}
+//			
+//			else
+//				e.printStackTrace();
+//		}
+//		
+//		return res;
+//	}
 	
 	/*
 	 *
@@ -916,112 +924,145 @@ public class HandleLucene {
 	 */
 
 		
-	public Integer AddIndex(Map<String,List<String[]>> content,String author,String time,String indexpath) throws IOException{
-		
-		Path inpath=Paths.get(indexpath);
+//	public Integer AddIndex(Map<String,List<String[]>> content,String author,String time,String indexpath) throws IOException{
+//		
+//		Path inpath=Paths.get(indexpath);
+//
+//		Analyzer analyzer = new StandardAnalyzer();		//鍒涘缓鏍囧噯鍒嗚瘝锟�?
+//	
+//		FSDirectory fsdir=FSDirectory.open(inpath);		//鍒涘缓纾佺洏绱㈠紩鏂囦欢
+//		
+//		RAMDirectory ramdir=new RAMDirectory();		//鍒涘缓鍐呭瓨绱㈠紩鏂囦欢
+//	
+//		IndexWriterConfig ramconfig = new IndexWriterConfig(analyzer);
+//		
+//		IndexWriter ramiwriter = new IndexWriter(ramdir,ramconfig);		//鍒涘缓鍐呭瓨IndexWriter
+//		
+//		
+//		int totalofindex=0;
+//		List<String[]> laws=new ArrayList<String[]>();
+//		
+//		for(Entry<String, List<String[]>> entry:content.entrySet()){ 
+//				
+//				FieldType filetype=new FieldType();
+//				filetype.setIndexOptions(IndexOptions.DOCS);
+//				filetype.setStored(true);		
+//				filetype.setTokenized(false);
+//				FieldType lawtype=new FieldType();
+//				lawtype.setIndexOptions(IndexOptions.NONE);
+//				lawtype.setStored(true);		
+//				lawtype.setTokenized(false);
+//				
+//				laws=entry.getValue();
+//				int count=laws.size();
+//				totalofindex=count;
+//				for(int i=0;i<count;i++){
+//					Document doc=new Document();		//鍒涘缓Document,姣忎竴涓彂鏉℃柊寤轰竴锟�?
+//					doc.add(new Field("file",entry.getKey(),filetype));		//鏂囨。鍚嶇О瀛樺偍锛屼笉鍒嗚瘝
+//					//doc.add(new IntPoint("path",Integer.valueOf(laws.get(i)[0])));		//娉曟潯绱㈠紩浠nt绫诲瀷瀛樺偍
+//					//doc.add(new StoredField("path",Integer.valueOf(laws.get(i)[0])));
+//					doc.add(new Field("author",author,lawtype));		//锟芥储锟矫凤拷锟斤拷锟斤拷锟斤拷锟斤拷	
+//					doc.add(new Field("time",time,lawtype));			//锟芥储锟矫凤拷锟斤拷锟侥达拷锟斤拷锟斤拷锟斤拷
+//					doc.add(new NumericDocValuesField("path",Integer.valueOf(laws.get(i)[0])));
+//					doc.add(new IntPoint("path",Integer.valueOf(laws.get(i)[0])));		//锟斤拷锟斤拷锟斤拷锟斤拷锟斤拷Int锟斤拷锟酵存储
+//					doc.add(new StoredField("path",Integer.valueOf(laws.get(i)[0])));
+//					doc.add(new Field("law",laws.get(i)[1],lawtype));		//鍙戞潯鍐呭绱㈠紩銆佸垎璇嶏紝涓嶅瓨锟�?
+//			    	ramiwriter.addDocument(doc);		//灏嗘硶鏉＄储寮曟坊鍔犲埌鍐呭瓨绱㈠紩锟�?	
+//				}	    		  
+//			}
+//	
+//		ramiwriter.close();
+//	
+//    	IndexWriterConfig fsconfig=new IndexWriterConfig(analyzer); 
+//    	fsconfig.setOpenMode(IndexWriterConfig.OpenMode.CREATE);
+//    	IndexWriter fsiwriter=new IndexWriter(fsdir,fsconfig);
+//        fsiwriter.addIndexes(ramdir); 		
+//        fsiwriter.close();
+//        return totalofindex;
+//	}
+	
+//	public void AddIndex(Map<String,String> file) throws IOException{
+//		if(writer!=null){
+//			Document doc=new Document();
+//			for(Entry<String,String> entry:file.entrySet()){
+//					FieldType filetype=new FieldType();
+//					filetype.setIndexOptions(IndexOptions.DOCS);
+//					filetype.setStored(true);		
+//					filetype.setTokenized(true);
+//					FieldType type=new FieldType();
+//					type.setIndexOptions(IndexOptions.NONE);
+//					type.setStored(true);		
+//					type.setTokenized(false);
+//					if(entry.getKey().equals("file"))
+//						doc.add(new Field(entry.getKey(),entry.getValue(),filetype));
+//					else
+//						doc.add(new Field(entry.getKey(),entry.getValue(),type));
+//				}
+//			writer.addDocument(doc);
+//			writer.commit();
+//		}
+//		
+//	}
 
-		Analyzer analyzer = new StandardAnalyzer();		//鍒涘缓鏍囧噯鍒嗚瘝锟�?
-	
-		FSDirectory fsdir=FSDirectory.open(inpath);		//鍒涘缓纾佺洏绱㈠紩鏂囦欢
-		
-		RAMDirectory ramdir=new RAMDirectory();		//鍒涘缓鍐呭瓨绱㈠紩鏂囦欢
-	
-		IndexWriterConfig ramconfig = new IndexWriterConfig(analyzer);
-		
-		IndexWriter ramiwriter = new IndexWriter(ramdir,ramconfig);		//鍒涘缓鍐呭瓨IndexWriter
-		
-		
-		int totalofindex=0;
-		List<String[]> laws=new ArrayList<String[]>();
-		
-		for(Entry<String, List<String[]>> entry:content.entrySet()){ 
-				
-				FieldType filetype=new FieldType();
-				filetype.setIndexOptions(IndexOptions.DOCS);
-				filetype.setStored(true);		
-				filetype.setTokenized(false);
-				FieldType lawtype=new FieldType();
-				lawtype.setIndexOptions(IndexOptions.NONE);
-				lawtype.setStored(true);		
-				lawtype.setTokenized(false);
-				
-				laws=entry.getValue();
-				int count=laws.size();
-				totalofindex=count;
-				for(int i=0;i<count;i++){
-					Document doc=new Document();		//鍒涘缓Document,姣忎竴涓彂鏉℃柊寤轰竴锟�?
-					doc.add(new Field("file",entry.getKey(),filetype));		//鏂囨。鍚嶇О瀛樺偍锛屼笉鍒嗚瘝
-					//doc.add(new IntPoint("path",Integer.valueOf(laws.get(i)[0])));		//娉曟潯绱㈠紩浠nt绫诲瀷瀛樺偍
-					//doc.add(new StoredField("path",Integer.valueOf(laws.get(i)[0])));
-					doc.add(new Field("author",author,lawtype));		//锟芥储锟矫凤拷锟斤拷锟斤拷锟斤拷锟斤拷	
-					doc.add(new Field("time",time,lawtype));			//锟芥储锟矫凤拷锟斤拷锟侥达拷锟斤拷锟斤拷锟斤拷
-					doc.add(new NumericDocValuesField("path",Integer.valueOf(laws.get(i)[0])));
-					doc.add(new IntPoint("path",Integer.valueOf(laws.get(i)[0])));		//锟斤拷锟斤拷锟斤拷锟斤拷锟斤拷Int锟斤拷锟酵存储
-					doc.add(new StoredField("path",Integer.valueOf(laws.get(i)[0])));
-					doc.add(new Field("law",laws.get(i)[1],lawtype));		//鍙戞潯鍐呭绱㈠紩銆佸垎璇嶏紝涓嶅瓨锟�?
-			    	ramiwriter.addDocument(doc);		//灏嗘硶鏉＄储寮曟坊鍔犲埌鍐呭瓨绱㈠紩锟�?	
-				}	    		  
-			}
-	
-		ramiwriter.close();
-	
-    	IndexWriterConfig fsconfig=new IndexWriterConfig(analyzer); 
-    	fsconfig.setOpenMode(IndexWriterConfig.OpenMode.CREATE);
-    	IndexWriter fsiwriter=new IndexWriter(fsdir,fsconfig);
-        fsiwriter.addIndexes(ramdir); 		
-        fsiwriter.close();
-        return totalofindex;
-	}
-	
-	public void AddIndex(Map<String,String> file) throws IOException{
-		if(writer!=null){
-			Document doc=new Document();
-			for(Entry<String,String> entry:file.entrySet()){
-					FieldType filetype=new FieldType();
-					filetype.setIndexOptions(IndexOptions.DOCS);
-					filetype.setStored(true);		
-					filetype.setTokenized(true);
-					FieldType type=new FieldType();
-					type.setIndexOptions(IndexOptions.NONE);
-					type.setStored(true);		
-					type.setTokenized(false);
-					if(entry.getKey().equals("file"))
-						doc.add(new Field(entry.getKey(),entry.getValue(),filetype));
-					else
-						doc.add(new Field(entry.getKey(),entry.getValue(),type));
-				}
-			writer.addDocument(doc);
-			writer.commit();
-		}
-		
-	}
-
-	public void CreateIndexWriter(String indexpath) throws IOException{
+	public void CreateIndexWriter(String indexpath){
 		try{
-		Path inpath=Paths.get(indexpath);
-		FSDirectory dir = FSDirectory.open(inpath);
-		Analyzer analyzer=new StandardAnalyzer();
-		TieredMergePolicy ti=new TieredMergePolicy();
-		ti.setForceMergeDeletesPctAllowed(0);		//锟斤拷锟斤拷删锟斤拷锟斤拷锟斤拷锟侥合诧拷锟斤拷锟斤拷为0锟斤拷锟斤拷删锟斤拷segment时锟斤拷锟斤拷锟斤拷锟斤拷锟叫合诧拷
-    	IndexWriterConfig config=new IndexWriterConfig(analyzer); 
-    	config.setOpenMode(IndexWriterConfig.OpenMode.CREATE_OR_APPEND);
-    	config.setMergePolicy(ti);		//锟斤拷锟矫合诧拷锟斤拷锟斤拷
-    	writer=new IndexWriter(dir,config);
-		
+			Path inpath=Paths.get(indexpath);
+			FSDirectory dir = FSDirectory.open(inpath);
+			Analyzer analyzer=new StandardAnalyzer();
+			TieredMergePolicy ti=new TieredMergePolicy();
+			ti.setForceMergeDeletesPctAllowed(0);		
+			IndexWriterConfig config=new IndexWriterConfig(analyzer); 
+    		config.setOpenMode(IndexWriterConfig.OpenMode.CREATE_OR_APPEND);
+    		config.setMergePolicy(ti);		
+    		writer=new IndexWriter(dir,config);
 		}catch (IOException e) {
 		// TODO Auto-generated catch block
 			e.printStackTrace();
 		}		
 	}
 	
-	public void InsertIndex(String s) throws IOException{
+	/*
+	 *
+	 * Copyright @ 2017 Beijing Beidouht Co. Ltd. 
+	 * All right reserved. 
+	 * @author: wanyan 
+	 * date: 2017-11-10 
+	 * 
+	 * InsertRepoIndex在仓库中的创建段落索引成功后，创建文档信息索引
+	 *
+	 * @params String[]
+	 * 				以String[操作类型，缓存索引路径，文档信息索引路径，文档名称，文档作者，文档创建日期，段落总数]形式传入参数
+	 * @return Boolean
+	 * 
+	 * @2018-8-23
+	 * 			修改传入参数为String[]
+	 * 			增加在仓库中的创建段落索引成功后，创建文档信息索引
+	 */
+	public Boolean InsertRepoIndex(String[] s){
+		Boolean f=true;
 		if(writer!=null){
-			Path brpath=Paths.get(s);
-			FSDirectory brdir=FSDirectory.open(brpath);
-			writer.addIndexes(brdir);
-			writer.commit();
+			try {
+				Path brpath=Paths.get(s[1]);
+				FSDirectory brdir = FSDirectory.open(brpath);
+				writer.addIndexes(brdir);
+				writer.commit();
+				
+				Map<String,String[]> finfo=new HashMap<String,String[]>();
+				String file=s[3];
+				String[] infos=new String[3];
+				System.arraycopy(s,4,infos,0,3);
+				finfo.put(file, infos);
+				FileIndexs fileindex=new FileIndexs();
+				f=fileindex.AddFiles(finfo,s[2]);
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				f=false;
+				e.printStackTrace();
+			}
 		}
-
+		else
+			f=false;
+		return f;
 	}
 	
 	public void CloseIndexWriter() throws IOException{

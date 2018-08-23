@@ -26,8 +26,7 @@ import net.sf.json.JSONObject;
 public class ServletDemo extends HttpServlet {
 	private static final long serialVersionUID = 1L;
 	public static BlockingQueue<String[]> item=new LinkedBlockingQueue<String[]>();
-	public static BlockingQueue<Map<String,String>> file=new LinkedBlockingQueue<Map<String,String>>();
-       
+  
     /**
      * @see HttpServlet#HttpServlet()
      */
@@ -40,7 +39,7 @@ public class ServletDemo extends HttpServlet {
     	super.init();
 		ExecutorService service = Executors.newFixedThreadPool(2);
 		service.execute(new UpdateIndex());
-		service.execute(new UpdateFile());
+//		service.execute(new UpdateFile());
     }
 
 	/**
