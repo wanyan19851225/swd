@@ -37,7 +37,7 @@ public class ExecuteRequest {
 			out.write(body);
 			break;
 		}
-		case 102:{		//单条件查询文档信息索引
+		case 102:{		//获取所有文档信息
 			FileIndexs fileindex=new FileIndexs();
 			Map<String,String[]> fre=fileindex.GetFileInfo(Paths.filepath);
 	        JSONArray filelist=new JSONArray();
