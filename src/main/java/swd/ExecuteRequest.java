@@ -109,11 +109,10 @@ public class ExecuteRequest {
 			String file=j.getString("file");
 			Map<String,List<String[]>> content=handle.GetTermSearch(swd.Paths.repositorypath,file);
 			JSONObject send=new JSONObject();
+	        JSONArray lawslist=new JSONArray();
 			if(!content.isEmpty()){
 				List<String[]> laws=content.get(file);
-				int count = laws.size();		//传给服务器的法条总数
-				send.accumulate("count",count);
-		        JSONArray lawslist=new JSONArray();
+				int count = laws.size();
 				for(int i=0;i<count;i++){
 					String[] law=laws.get(i);
 					JSONObject tem=new JSONObject();
@@ -122,12 +121,14 @@ public class ExecuteRequest {
 					tem.accumulate("law",law[1]);
 					lawslist.add(tem);
 				}
-				send.accumulate("lawslist",lawslist);
+				send.accumulate("count",count);
 			}
+			else
+				send.accumulate("count",0);
+			send.accumulate("lawslist",lawslist);
 	        send.put("token","");
 	        send.put("command","105");
 	        send.put("file",file);
-	        send.accumulate("result",1);
 	        String body=gz.S2Gzip(send.toString());
 	        out.write(body);
 	        break;

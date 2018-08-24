@@ -524,7 +524,8 @@ public class HandleLucene {
 	 * 				灏嗘悳绱㈢粨鏋滀互Map<鏂囦欢鍚嶏紝[绔犺妭锛屾硶鏉>鐨勬槧灏勫叧绯伙紝杩斿洖鏌ヨ缁撴灉		   
 	 * @2017-11-17
 	 * 			浣跨敤SortField鍜孲ort璋冪敤IndexSearch鏂规硶,瀵规悳绱㈢粨鏋滅敤path瀛楁鍗囧簭鎺掑簭						  
-	 * 
+	 * @2018-8-24
+	 * 			修复当未查询到索引时，由原来的返回null，改为返回files
 	 */
 	
 	public Map<String,List<String[]>> GetTermSearch(String indexpath,String keywords) throws IOException{
@@ -562,31 +563,26 @@ public class HandleLucene {
           
         int num=hits.length;
         
-        if(num==0){
-        	files=null;
-        }
-		else{
-			String temp=null;
-			String laws;
-			for(int i=0;i<num;i++){
-				String indexlaws[]=new String[2];
-				Document hitdoc=indexsearcher.doc(hits[i].doc);
-				temp=hitdoc.get("file");	
-				indexlaws[0]=hitdoc.get("path");
-				laws=hitdoc.get("law");
-				if(laws!=null){
-					indexlaws[1]=laws;
-					path.add(indexlaws);						
-				}    
-			}  	
-			files.put(temp,path);			
-		}
-		
+        if(num==0)
+        	return files;
+		String temp=null;
+		String laws;
+		for(int i=0;i<num;i++){
+			String indexlaws[]=new String[2];
+			Document hitdoc=indexsearcher.doc(hits[i].doc);
+			temp=hitdoc.get("file");	
+			indexlaws[0]=hitdoc.get("path");
+			laws=hitdoc.get("law");
+			if(laws!=null){
+				indexlaws[1]=laws;
+				path.add(indexlaws);						
+			}    
+		}  	
+		files.put(temp,path);			
         ramdir.close();
         indexreader.close();
         fsdir.close();
-        return files;
-		
+        return files;		
 	}
 	
 	/*
