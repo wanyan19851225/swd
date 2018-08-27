@@ -161,7 +161,7 @@ public class ExecuteRequest {
 				send.accumulate("result",0);
 			}
 	        send.put("token","");
-	        send.put("command","105");
+	        send.put("command","106");
 	        send.put("file",file);
 	        String body=gz.S2Gzip(send.toString());
 	        out.write(body);
@@ -200,8 +200,31 @@ public class ExecuteRequest {
 	        out.write(body);
 	        break;
 		}
-		
-		
+		case 108:{		//单条件查询文档信息索引
+			String keywords=j.getString("keywords");
+	        FileIndexs fileindex=new FileIndexs();
+	        Map<String,String[]> finfo=fileindex.QueryFiles(Paths.filepath,keywords);
+	        JSONArray FileList=new JSONArray();
+			JSONObject send=new JSONObject();
+	        if(!finfo.isEmpty()){
+	        	for(Entry<String,String[]> entry: finfo.entrySet()){
+					String[] infos=entry.getValue();
+					JSONObject tem1=new JSONObject();
+					tem1.accumulate("file",entry.getKey());
+					tem1.accumulate("author",infos[0]);
+					tem1.accumulate("time",infos[1]);
+					tem1.accumulate("segments",infos[2]);
+					tem1.accumulate("findex", infos[3]);
+					FileList.add(tem1);
+				} 
+	        }
+	        send.accumulate("FileList", FileList);
+	        send.accumulate("command","108");
+	        send.accumulate("token", "");
+	        String body=gz.S2Gzip(send.toString());
+	        out.write(body);
+			break;
+		}
 		}
 	}
 

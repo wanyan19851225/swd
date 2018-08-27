@@ -124,8 +124,7 @@ public class FileIndexs {
 			indexwriter=new IndexWriter(fsdir,fsconfig);
 		}	
 	}
-	
-	
+		
 	public boolean CreateIndexReader(String indexpath) throws IOException{
 		boolean f = false;
 		try{
@@ -422,6 +421,76 @@ public class FileIndexs {
 			e.printStackTrace();
 		}
 		return finfo;	
+	}
+
+	/*
+	 *
+	 * Copyright @ 2018 Beijing Beidouht Co. Ltd. 
+	 * All right reserved. 
+	 * @author: wanyan 
+	 * date: 2018-8-27 
+	 * 
+	 * 单条件查询
+	 *
+	 * @params indexpath
+	 * 				索引文件所在目录
+	 * 			keywords 
+	 * 				从JTextField获取用户输入的关键字
+	 * 			
+	 * @return Map<Stirng,String[]>
+	 * 				将搜索结果以Map<文档名称，[文档作者，创建时间，段落总数，文档检索]>的映射关系，返回查询结果
+	 * 
+	 */
+	public Map<String,String[]> QueryFiles(String indexpath,String keywords){
+		Map<String,String[]> finfo=new LinkedMap<String,String[]>();
+		try{
+			this.CreateIndexReader(indexpath);
+			if(indexreader!=null){	
+				Analyzer analyzer=new StandardAnalyzer();		//创建标准分词器
+				IndexSearcher indexsearcher=new IndexSearcher(indexreader);
+				QueryParser parser=new QueryParser("findex", analyzer);
+				Query query=parser.parse(keywords.toString());
+				
+				int top=indexreader.numDocs();		//获取索引文件中有效文档总数
+				
+				if(top==0)	//判断索引文件中的有效文档总数是否为0，如果为零则退出该方法，返回null
+					return finfo;
+				TopDocs topdocs=indexsearcher.search(query,top); 
+				ScoreDoc[] hits=topdocs.scoreDocs;
+				int num=hits.length;
+				if(num==0)
+					return finfo;
+				SimpleHTMLFormatter simpleHTMLFormatter = new SimpleHTMLFormatter("<font color=red>","</font>"); //如果不指定参数的话，默认是加粗，即<b><b/>
+				QueryScorer scorer = new QueryScorer(query);//计算得分，会初始化一个查询结果最高的得分
+				Highlighter highlighter = new Highlighter(simpleHTMLFormatter, scorer);	
+				
+				for(int i=0;i<num;i++){	
+					Document hitdoc=indexsearcher.doc(hits[i].doc);
+					String file=hitdoc.get("file");
+					String infos[]=new String[4];
+					infos[0]=hitdoc.get("author");
+					infos[1]=hitdoc.get("time");
+					infos[2]=hitdoc.get("segments");
+					String fname=hitdoc.get("findex");
+					if(fname!=null){
+						TokenStream tokenStream = analyzer.tokenStream("findex",new StringReader(fname));
+						String highlaws=highlighter.getBestFragment(tokenStream,fname);
+						infos[3]=highlaws;
+					}
+					finfo.put(file, infos);				
+				}
+			}	
+		}catch (IOException e) {
+			// TODO Auto-generated catch block
+				e.printStackTrace();
+		} catch (ParseException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (InvalidTokenOffsetsException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+      return finfo;	
 	}
 }
                                                   
