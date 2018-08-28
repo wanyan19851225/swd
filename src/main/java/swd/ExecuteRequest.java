@@ -29,10 +29,27 @@ public class ExecuteRequest {
 		String cmd=j.getString("command");
 		Writer out = response.getWriter();
 		switch (Integer.parseInt(cmd)) {
-		case 101:{
-			IOJson ioj=new IOJson();
-			Map<String,List<String[]>> content=handle.GetSearch(Paths.repositorypath,j.getString("keywords"),100);
-			JSONObject send=ioj.Map2Json("","101",content);
+		case 101:{		//检索仓库段落内容
+//			Map<String,List<String[]>> content=handle.GetSearch(Paths.repositorypath,j.getString("keywords"),100);
+			Map<String,List<String[]>> content=handle.QuerySegments(Paths.repositorypath,j.getString("keywords"));
+			JSONArray results=new JSONArray();
+			JSONObject send=new JSONObject();
+			for(Entry<String,List<String[]>> entry: content.entrySet()){
+				JSONArray segments=new JSONArray();
+				for(int i=0;i<entry.getValue().size();i++){
+					JSONObject tem1=new JSONObject();
+					tem1.accumulate("path",entry.getValue().get(i)[0]);
+					tem1.accumulate("segment",entry.getValue().get(i)[1]);
+					segments.add(tem1);
+				}
+				JSONObject tem=new JSONObject();
+				tem.accumulate("file",entry.getKey());
+				tem.accumulate("segments",segments);
+				results.add(tem);
+			}
+			send.accumulate("command","101");
+	        send.put("token","");
+	        send.accumulate("ResultList", results);
 	        String body=gz.S2Gzip(send.toString());
 			out.write(body);
 			break;

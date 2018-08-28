@@ -68,131 +68,254 @@ import org.apache.lucene.util.BytesRef;
 
 public class HandleLucene {
 	
-	private IndexWriter writer;
+	private static IndexWriter indexwriter;
 	private FSDirectory dir;
+	private static IndexReader indexreader;
+	private static RAMDirectory ramdir;
+	private static FSDirectory fsdir;
 	
-	/*
-	 *
-	 * Copyright @ 2017 Beijing Beidouht Co. Ltd. 
-	 * All right reserved. 
-	 * @author: wanyan 
-	 * date: 2017-10-29 
-	 * 
-	 * 璇ユ柟娉曚笌浣跨敤鍗曚竴鏌ヨ鏂瑰紡
-	 *
-	 * @params indexpath
-	 * 				绱㈠紩鏂囦欢锟�?鍦ㄧ洰锟�?
-	 * 			keywords 
-	 * 				浠嶫TextField鑾峰彇鐢ㄦ埛杈撳叆鐨勫叧閿瓧
-	 * 			top
-	 * 				浠嶫Radio鑾峰彇鐢ㄦ埛閫夋嫨鐨勬悳绱㈡潯鏁帮紝鍦ㄧ储寮曟枃浠朵腑鏍规嵁鐩稿叧搴︽帓搴忥紝杩斿洖鍓峵op锟�?
-	 * 			
-	 * @return Map<Stirng,List<String[]>>
-	 * 				灏嗘悳绱㈢粨鏋滀互Map<鏂囦欢鍚嶏紝[绔犺妭锛屾硶鏉>鐨勬槧灏勫叧绯伙紝杩斿洖鏌ヨ缁撴灉		   
-	 * 						  
-	 * @2017-10-31
-	 * 				淇敼楂樹寒鎴彇鐨勯粯璁ゅ瓧绗︽暟锛屼慨鏀逛负鏍规嵁娉曟潯鍐呭鐨勫瓧绗︽暟鏄剧ず
-	 */
-	
-	public Map<String,List<String[]>> GetSearch(String indexpath,String keywords,int top) throws ParseException, IOException, InvalidTokenOffsetsException{
-		
-		Map<String,List<String[]>> files=new LinkedHashMap<String,List<String[]>>();
-		
-		Path inpath=Paths.get(indexpath);
-		
+	public boolean CreateIndexReader(String indexpath) throws IOException{
+		boolean f = false;
 		try{
-		
-		FSDirectory fsdir=FSDirectory.open(inpath);		//鍒涘缓纾佺洏绱㈠紩鏂囦欢
-		
-		IOContext iocontext=new IOContext();
-
-		RAMDirectory ramdir=new RAMDirectory(fsdir,iocontext);		//鍒涘缓鍐呭瓨绱㈠紩鏂囦欢锛屽苟灏嗙鐩樼储寮曟枃浠舵斁鍒板唴瀛樹腑
-		
-		Analyzer analyzer=new StandardAnalyzer();		//鍒涘缓鏍囧噯鍒嗚瘝锟�?
-
-		IndexReader indexreader=DirectoryReader.open(ramdir);
-
-		IndexSearcher indexsearcher=new IndexSearcher(indexreader);
-		
-//		Term term=new Term("law",keywords);
-		
-//		TermQuery termquery=new TermQuery(term);
-//		妯＄硦鏌ヨ		
-//		FuzzyQuery fuzzquery=new FuzzyQuery(term);
-// 		鐭鏌ヨ		
-//		 PhraseQuery.Builder builder = new PhraseQuery.Builder();
-//		 builder.add(term);
-//		 PhraseQuery phrasequery=builder.build();
-//		鏌ヨ鍒嗘瀽锟�?	
+			if(indexreader==null){
+				Path inpath=Paths.get(indexpath);
+				if(fsdir==null)		//判断是否已经创建，如果没有创建则新建，否则复用
+					fsdir=FSDirectory.open(inpath);		//创建磁盘索引文件
+				IOContext iocontext=new IOContext();
+				if(ramdir!=null)		//如果已经创建，则关闭
+					ramdir.close();
+				ramdir=new RAMDirectory(fsdir,iocontext);		//创建内存索引文件，并将磁盘索引文件放到内存中
+				indexreader=DirectoryReader.open(ramdir);
+			}
+			else{
 			
-        QueryParser parser=new QueryParser("law", analyzer);
-           
-        Query query=parser.parse(keywords.toString());
-        
-        TopDocs topdocs=indexsearcher.search(query,top); 
-        
-        ScoreDoc[] hits=topdocs.scoreDocs;
-        
-        int num=hits.length;
-        
-        if(num==0){
-        	return null;
-        }
-        
-        //姝ゅ鍔犲叆鐨勬槸鎼滅储缁撴灉鐨勯珮浜儴锟�?
-        SimpleHTMLFormatter simpleHTMLFormatter = new SimpleHTMLFormatter("<b><font color=red>","</font></b>"); //濡傛灉涓嶆寚瀹氬弬鏁扮殑璇濓紝榛樿鏄姞绮楋紝锟�?<b><b/>
-        QueryScorer scorer = new QueryScorer(query);//计算得分，会初始化一个查询结果最高的得分
-//        Fragmenter fragmenter = new SimpleSpanFragmenter(scorer); //鏍规嵁杩欎釜寰楀垎璁＄畻鍑轰竴涓墖锟�?
-        Highlighter highlighter = new Highlighter(simpleHTMLFormatter, scorer);
- //       highlighter.setTextFragmenter(fragmenter); //璁剧疆锟�?涓嬭鏄剧ず鐨勭墖锟�?
-  
-        for(int i=0;i<num;i++){
-        	
-        	Document hitdoc=indexsearcher.doc(hits[i].doc);
-        	
-    		String temp=hitdoc.get("file");
-    		String indexlaws[]=new String[2];
-    		Integer index=Integer.valueOf(hitdoc.get("path"));
-    		if(index/100000==999)		//判断章段落的索引号是否为999,当索引号为999时，表明没有章段落，索引号设置为0
-    			indexlaws[0]="第"+0+"章"+"&emsp";
-    		else
-    			indexlaws[0]="第"+index/100000+"章"+" ";
-    		index=index%100000;
-    		indexlaws[0]+="第"+index/1000+"节";
-    		String laws=hitdoc.get("law");
-    		if(laws!=null){
-    			TokenStream tokenStream = analyzer.tokenStream("laws",new StringReader(laws));
-    			Fragmenter displaysize= new SimpleFragmenter(laws.length());
-    			highlighter.setTextFragmenter(displaysize);
-    			String highlaws=highlighter.getBestFragment(tokenStream,laws);
-        		indexlaws[1]=highlaws;
-               	if(i==0){
-            		List<String[]> path=new ArrayList<String[]>();
-            		path.add(indexlaws);
-            		files.put(temp,path);
-            	}else{
-            		if(files.containsKey(temp)){
-            			files.get(temp).add(indexlaws);
-            		}else{
-            			List<String[]> path=new ArrayList<String[]>();
-                		path.add(indexlaws);
-                		files.put(temp,path);
-            		}     		
-            	}
-    		}
-        }
-        ramdir.close();
-        indexreader.close();
-        fsdir.close();
+				if(indexwriter!=null){		//判断indexwriter是否实例化
+					IndexReader tr=DirectoryReader.openIfChanged((DirectoryReader)indexreader,indexwriter);	
+					if(tr!=null){	
+						indexreader.close();	
+						indexreader=tr;	
+					}
+				}
+		
+			}
+			f=true;
 		}catch (IOException e) {
-			// TODO Auto-generated catch block
+		// TODO Auto-generated catch block
 			if(e.getClass().getSimpleName().equals("IndexNotFoundException"))		//当没有找到索引文件时，catch异常，并弹框提示
-				JOptionPane.showMessageDialog(null, "未找到索引文件，请先创建索引文件", "警告", JOptionPane.ERROR_MESSAGE);
+				//JOptionPane.showMessageDialog(null, "未找到索引文件，请先创建索引文件", "警告", JOptionPane.ERROR_MESSAGE);
+				f=false;
 			else
 				e.printStackTrace();
 		}
-        return files;
+		return f;
+	}
+	
+//	/*
+//	 *
+//	 * Copyright @ 2017 Beijing Beidouht Co. Ltd. 
+//	 * All right reserved. 
+//	 * @author: wanyan 
+//	 * date: 2017-10-29 
+//	 * 
+//	 * 璇ユ柟娉曚笌浣跨敤鍗曚竴鏌ヨ鏂瑰紡
+//	 *
+//	 * @params indexpath
+//	 * 				绱㈠紩鏂囦欢锟�?鍦ㄧ洰锟�?
+//	 * 			keywords 
+//	 * 				浠嶫TextField鑾峰彇鐢ㄦ埛杈撳叆鐨勫叧閿瓧
+//	 * 			top
+//	 * 				浠嶫Radio鑾峰彇鐢ㄦ埛閫夋嫨鐨勬悳绱㈡潯鏁帮紝鍦ㄧ储寮曟枃浠朵腑鏍规嵁鐩稿叧搴︽帓搴忥紝杩斿洖鍓峵op锟�?
+//	 * 			
+//	 * @return Map<Stirng,List<String[]>>
+//	 * 				灏嗘悳绱㈢粨鏋滀互Map<鏂囦欢鍚嶏紝[绔犺妭锛屾硶鏉>鐨勬槧灏勫叧绯伙紝杩斿洖鏌ヨ缁撴灉		   
+//	 * 						  
+//	 * @2017-10-31
+//	 * 				淇敼楂樹寒鎴彇鐨勯粯璁ゅ瓧绗︽暟锛屼慨鏀逛负鏍规嵁娉曟潯鍐呭鐨勫瓧绗︽暟鏄剧ず
+//	 */
+//	
+//	public Map<String,List<String[]>> GetSearch(String indexpath,String keywords,int top) throws ParseException, IOException, InvalidTokenOffsetsException{
+//		
+//		Map<String,List<String[]>> files=new LinkedHashMap<String,List<String[]>>();
+//		
+//		Path inpath=Paths.get(indexpath);
+//		
+//		try{
+//		
+//		FSDirectory fsdir=FSDirectory.open(inpath);		//鍒涘缓纾佺洏绱㈠紩鏂囦欢
+//		
+//		IOContext iocontext=new IOContext();
+//
+//		RAMDirectory ramdir=new RAMDirectory(fsdir,iocontext);		//鍒涘缓鍐呭瓨绱㈠紩鏂囦欢锛屽苟灏嗙鐩樼储寮曟枃浠舵斁鍒板唴瀛樹腑
+//		
+//		Analyzer analyzer=new StandardAnalyzer();		//鍒涘缓鏍囧噯鍒嗚瘝锟�?
+//
+//		IndexReader indexreader=DirectoryReader.open(ramdir);
+//
+//		IndexSearcher indexsearcher=new IndexSearcher(indexreader);
+//		
+////		Term term=new Term("law",keywords);
+//		
+////		TermQuery termquery=new TermQuery(term);
+////		妯＄硦鏌ヨ		
+////		FuzzyQuery fuzzquery=new FuzzyQuery(term);
+//// 		鐭鏌ヨ		
+////		 PhraseQuery.Builder builder = new PhraseQuery.Builder();
+////		 builder.add(term);
+////		 PhraseQuery phrasequery=builder.build();
+////		鏌ヨ鍒嗘瀽锟�?	
+//			
+//        QueryParser parser=new QueryParser("law", analyzer);
+//           
+//        Query query=parser.parse(keywords.toString());
+//        
+//        TopDocs topdocs=indexsearcher.search(query,top); 
+//        
+//        ScoreDoc[] hits=topdocs.scoreDocs;
+//        
+//        int num=hits.length;
+//        
+//        if(num==0){
+//        	return null;
+//        }
+//        
+//        //姝ゅ鍔犲叆鐨勬槸鎼滅储缁撴灉鐨勯珮浜儴锟�?
+//        SimpleHTMLFormatter simpleHTMLFormatter = new SimpleHTMLFormatter("<b><font color=red>","</font></b>"); //濡傛灉涓嶆寚瀹氬弬鏁扮殑璇濓紝榛樿鏄姞绮楋紝锟�?<b><b/>
+//        QueryScorer scorer = new QueryScorer(query);//计算得分，会初始化一个查询结果最高的得分
+////        Fragmenter fragmenter = new SimpleSpanFragmenter(scorer); //鏍规嵁杩欎釜寰楀垎璁＄畻鍑轰竴涓墖锟�?
+//        Highlighter highlighter = new Highlighter(simpleHTMLFormatter, scorer);
+// //       highlighter.setTextFragmenter(fragmenter); //璁剧疆锟�?涓嬭鏄剧ず鐨勭墖锟�?
+//  
+//        for(int i=0;i<num;i++){
+//        	
+//        	Document hitdoc=indexsearcher.doc(hits[i].doc);
+//        	
+//    		String temp=hitdoc.get("file");
+//    		String indexlaws[]=new String[2];
+//    		Integer index=Integer.valueOf(hitdoc.get("path"));
+//    		if(index/100000==999)		//判断章段落的索引号是否为999,当索引号为999时，表明没有章段落，索引号设置为0
+//    			indexlaws[0]="第"+0+"章"+"&emsp";
+//    		else
+//    			indexlaws[0]="第"+index/100000+"章"+" ";
+//    		index=index%100000;
+//    		indexlaws[0]+="第"+index/1000+"节";
+//    		String laws=hitdoc.get("law");
+//    		if(laws!=null){
+//    			TokenStream tokenStream = analyzer.tokenStream("laws",new StringReader(laws));
+//    			Fragmenter displaysize= new SimpleFragmenter(laws.length());
+//    			highlighter.setTextFragmenter(displaysize);
+//    			String highlaws=highlighter.getBestFragment(tokenStream,laws);
+//        		indexlaws[1]=highlaws;
+//               	if(i==0){
+//            		List<String[]> path=new ArrayList<String[]>();
+//            		path.add(indexlaws);
+//            		files.put(temp,path);
+//            	}else{
+//            		if(files.containsKey(temp)){
+//            			files.get(temp).add(indexlaws);
+//            		}else{
+//            			List<String[]> path=new ArrayList<String[]>();
+//                		path.add(indexlaws);
+//                		files.put(temp,path);
+//            		}     		
+//            	}
+//    		}
+//        }
+//        ramdir.close();
+//        indexreader.close();
+//        fsdir.close();
+//		}catch (IOException e) {
+//			// TODO Auto-generated catch block
+//			if(e.getClass().getSimpleName().equals("IndexNotFoundException"))		//当没有找到索引文件时，catch异常，并弹框提示
+//				JOptionPane.showMessageDialog(null, "未找到索引文件，请先创建索引文件", "警告", JOptionPane.ERROR_MESSAGE);
+//			else
+//				e.printStackTrace();
+//		}
+//        return files;
+//		
+//	}
+	
+	/*
+	 *
+	 * Copyright @ 2018 Beijing Beidouht Co. Ltd. 
+	 * All right reserved. 
+	 * @author: wanyan 
+	 * date: 2018-8-28 
+	 * 
+	 * 该方法与使用单一查询方式
+	 *
+	 * @params indexpath
+	 * 				索引文件所在目录
+	 * 			keywords 
+	 * 				从JTextField获取用户输入的关键字
+	 * 			top
+	 * 				从JRadio获取用户选择的搜索条数，在索引文件中根据相关度排序，返回前top条
+	 * 			
+	 * @return Map<Stirng,List<String[]>>
+	 * 				将搜索结果以Map<文件名，[章节，法条]>的映射关系，返回查询结果		   
+	 * 						 
+	 * 
+	 */
+	
+	public Map<String,List<String[]>> QuerySegments(String indexpath,String keywords) throws ParseException, IOException, InvalidTokenOffsetsException{
 		
+		Map<String,List<String[]>> files=new LinkedHashMap<String,List<String[]>>();
+		try{
+			this.CreateIndexReader(indexpath);
+			if(indexreader!=null){	
+				Analyzer analyzer=new StandardAnalyzer();		//创建标准分词器
+				IndexSearcher indexsearcher=new IndexSearcher(indexreader);
+				QueryParser parser=new QueryParser("law", analyzer);
+				Query query=parser.parse(keywords.toString());
+				int top=indexreader.numDocs();		//获取索引文件中有效文档总数
+				if(top==0)	//判断索引文件中的有效文档总数是否为0，如果为零则退出该方法，返回null
+					return files;
+				TopDocs topdocs=indexsearcher.search(query,top); 
+				ScoreDoc[] hits=topdocs.scoreDocs;
+				int num=hits.length;  
+				if(num==0)
+					return files;	
+				SimpleHTMLFormatter simpleHTMLFormatter = new SimpleHTMLFormatter("<b><font color=red>","</font></b>"); //如果不指定参数的话，默认是加粗，即<b><b/>
+				QueryScorer scorer = new QueryScorer(query);//计算得分，会初始化一个查询结果最高的得分
+				Highlighter highlighter = new Highlighter(simpleHTMLFormatter, scorer);		
+				for(int i=0;i<num;i++){	
+					Document hitdoc=indexsearcher.doc(hits[i].doc);
+					String temp=hitdoc.get("file");
+					String indexlaws[]=new String[2];
+					Integer index=Integer.valueOf(hitdoc.get("path"));		
+				    if(index/100000==999)		//判断章段落的索引号是否为999,当索引号为999时，表明没有章段落，索引号设置为0
+				    	indexlaws[0]="第"+0+"章"+"&emsp";
+				    else
+				    	indexlaws[0]="第"+index/100000+"章"+"&emsp";
+					index=index%100000;
+					indexlaws[0]+="第"+index/1000+"节";
+					String laws=hitdoc.get("law");
+					if(laws!=null){
+						TokenStream tokenStream = analyzer.tokenStream("laws",new StringReader(laws));
+						Fragmenter displaysize= new SimpleFragmenter(laws.length());
+						highlighter.setTextFragmenter(displaysize);
+						String highlaws=highlighter.getBestFragment(tokenStream,laws);
+						indexlaws[1]=highlaws;
+						if(i==0){
+							List<String[]> path=new ArrayList<String[]>();
+							path.add(indexlaws);
+							files.put(temp,path);
+						}else{
+							if(files.containsKey(temp)){
+								files.get(temp).add(indexlaws);
+							}else{
+								List<String[]> path=new ArrayList<String[]>();
+								path.add(indexlaws);
+								files.put(temp,path);
+							}     		           	 			
+						}
+					}
+				}
+			}	
+		}catch (IOException e) {
+			// TODO Auto-generated catch block
+				e.printStackTrace();
+		}
+       return files;	
 	}
 
 	/*
@@ -717,12 +840,12 @@ public class HandleLucene {
 
 	public Boolean DeleteRepoIndex(String[] s){
 		Boolean f=true;
-		if(writer!=null){					
+		if(indexwriter!=null){					
 			try {
 				Term t=new Term("file",s[1]);
-				writer.deleteDocuments(t);
-				writer.forceMergeDeletes();
-				writer.commit();
+				indexwriter.deleteDocuments(t);
+				indexwriter.forceMergeDeletes();
+				indexwriter.commit();
 				
 				FileIndexs fileindex=new FileIndexs();
 				f=fileindex.DeleteFile(s[1],s[2]);
@@ -748,7 +871,7 @@ public class HandleLucene {
 			IndexWriterConfig config=new IndexWriterConfig(analyzer); 
     		config.setOpenMode(IndexWriterConfig.OpenMode.CREATE_OR_APPEND);
     		config.setMergePolicy(ti);		
-    		writer=new IndexWriter(dir,config);
+    		indexwriter=new IndexWriter(dir,config);
 		}catch (IOException e) {
 		// TODO Auto-generated catch block
 			e.printStackTrace();
@@ -774,12 +897,12 @@ public class HandleLucene {
 	 */
 	public Boolean InsertRepoIndex(String[] s){
 		Boolean f=true;
-		if(writer!=null){
+		if(indexwriter!=null){
 			try {
 				Path brpath=Paths.get(s[1]);
 				FSDirectory brdir = FSDirectory.open(brpath);
-				writer.addIndexes(brdir);
-				writer.commit();
+				indexwriter.addIndexes(brdir);
+				indexwriter.commit();
 				
 				Map<String,String[]> finfo=new HashMap<String,String[]>();
 				String file=s[3];
@@ -802,8 +925,8 @@ public class HandleLucene {
 	public void CloseIndexWriter() throws IOException{
 		if(dir!=null)
 			dir.close();
-		if(writer!=null)
-			writer.close();
+		if(indexwriter!=null)
+			indexwriter.close();
 	}
 	
 	public static void main(String[] args) throws Exception{
