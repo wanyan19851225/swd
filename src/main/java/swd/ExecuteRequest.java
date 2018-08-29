@@ -134,7 +134,7 @@ public class ExecuteRequest {
 		}
 		case 105:{		//导入检索
 			String file=j.getString("file");
-			Map<String,List<String[]>> content=handle.GetTermSearch(Paths.repositorypath,file);
+			Map<String,List<String[]>> content=handle.GetAllSegments(Paths.repositorypath,file);
 			JSONObject send=new JSONObject();
 	        JSONArray lawslist=new JSONArray();
 			if(!content.isEmpty()){
@@ -176,7 +176,7 @@ public class ExecuteRequest {
 		case 106:{		//查询文档段落
 			String file=j.getString("file");
 			int top=j.getInt("top"); 
-			Map<String,List<String[]>> content=handle.GetTermSearch(swd.Paths.repositorypath,file,top);
+			Map<String,List<String[]>> content=handle.GetAllSegments(swd.Paths.repositorypath,file,top);
 			JSONObject send=new JSONObject();
 			if(!content.isEmpty()){
 				List<String[]> laws=content.get(file);

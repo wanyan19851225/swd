@@ -110,130 +110,6 @@ public class HandleLucene {
 		return f;
 	}
 	
-//	/*
-//	 *
-//	 * Copyright @ 2017 Beijing Beidouht Co. Ltd. 
-//	 * All right reserved. 
-//	 * @author: wanyan 
-//	 * date: 2017-10-29 
-//	 * 
-//	 * 璇ユ柟娉曚笌浣跨敤鍗曚竴鏌ヨ鏂瑰紡
-//	 *
-//	 * @params indexpath
-//	 * 				绱㈠紩鏂囦欢锟�?鍦ㄧ洰锟�?
-//	 * 			keywords 
-//	 * 				浠嶫TextField鑾峰彇鐢ㄦ埛杈撳叆鐨勫叧閿瓧
-//	 * 			top
-//	 * 				浠嶫Radio鑾峰彇鐢ㄦ埛閫夋嫨鐨勬悳绱㈡潯鏁帮紝鍦ㄧ储寮曟枃浠朵腑鏍规嵁鐩稿叧搴︽帓搴忥紝杩斿洖鍓峵op锟�?
-//	 * 			
-//	 * @return Map<Stirng,List<String[]>>
-//	 * 				灏嗘悳绱㈢粨鏋滀互Map<鏂囦欢鍚嶏紝[绔犺妭锛屾硶鏉>鐨勬槧灏勫叧绯伙紝杩斿洖鏌ヨ缁撴灉		   
-//	 * 						  
-//	 * @2017-10-31
-//	 * 				淇敼楂樹寒鎴彇鐨勯粯璁ゅ瓧绗︽暟锛屼慨鏀逛负鏍规嵁娉曟潯鍐呭鐨勫瓧绗︽暟鏄剧ず
-//	 */
-//	
-//	public Map<String,List<String[]>> GetSearch(String indexpath,String keywords,int top) throws ParseException, IOException, InvalidTokenOffsetsException{
-//		
-//		Map<String,List<String[]>> files=new LinkedHashMap<String,List<String[]>>();
-//		
-//		Path inpath=Paths.get(indexpath);
-//		
-//		try{
-//		
-//		FSDirectory fsdir=FSDirectory.open(inpath);		//鍒涘缓纾佺洏绱㈠紩鏂囦欢
-//		
-//		IOContext iocontext=new IOContext();
-//
-//		RAMDirectory ramdir=new RAMDirectory(fsdir,iocontext);		//鍒涘缓鍐呭瓨绱㈠紩鏂囦欢锛屽苟灏嗙鐩樼储寮曟枃浠舵斁鍒板唴瀛樹腑
-//		
-//		Analyzer analyzer=new StandardAnalyzer();		//鍒涘缓鏍囧噯鍒嗚瘝锟�?
-//
-//		IndexReader indexreader=DirectoryReader.open(ramdir);
-//
-//		IndexSearcher indexsearcher=new IndexSearcher(indexreader);
-//		
-////		Term term=new Term("law",keywords);
-//		
-////		TermQuery termquery=new TermQuery(term);
-////		妯＄硦鏌ヨ		
-////		FuzzyQuery fuzzquery=new FuzzyQuery(term);
-//// 		鐭鏌ヨ		
-////		 PhraseQuery.Builder builder = new PhraseQuery.Builder();
-////		 builder.add(term);
-////		 PhraseQuery phrasequery=builder.build();
-////		鏌ヨ鍒嗘瀽锟�?	
-//			
-//        QueryParser parser=new QueryParser("law", analyzer);
-//           
-//        Query query=parser.parse(keywords.toString());
-//        
-//        TopDocs topdocs=indexsearcher.search(query,top); 
-//        
-//        ScoreDoc[] hits=topdocs.scoreDocs;
-//        
-//        int num=hits.length;
-//        
-//        if(num==0){
-//        	return null;
-//        }
-//        
-//        //姝ゅ鍔犲叆鐨勬槸鎼滅储缁撴灉鐨勯珮浜儴锟�?
-//        SimpleHTMLFormatter simpleHTMLFormatter = new SimpleHTMLFormatter("<b><font color=red>","</font></b>"); //濡傛灉涓嶆寚瀹氬弬鏁扮殑璇濓紝榛樿鏄姞绮楋紝锟�?<b><b/>
-//        QueryScorer scorer = new QueryScorer(query);//计算得分，会初始化一个查询结果最高的得分
-////        Fragmenter fragmenter = new SimpleSpanFragmenter(scorer); //鏍规嵁杩欎釜寰楀垎璁＄畻鍑轰竴涓墖锟�?
-//        Highlighter highlighter = new Highlighter(simpleHTMLFormatter, scorer);
-// //       highlighter.setTextFragmenter(fragmenter); //璁剧疆锟�?涓嬭鏄剧ず鐨勭墖锟�?
-//  
-//        for(int i=0;i<num;i++){
-//        	
-//        	Document hitdoc=indexsearcher.doc(hits[i].doc);
-//        	
-//    		String temp=hitdoc.get("file");
-//    		String indexlaws[]=new String[2];
-//    		Integer index=Integer.valueOf(hitdoc.get("path"));
-//    		if(index/100000==999)		//判断章段落的索引号是否为999,当索引号为999时，表明没有章段落，索引号设置为0
-//    			indexlaws[0]="第"+0+"章"+"&emsp";
-//    		else
-//    			indexlaws[0]="第"+index/100000+"章"+" ";
-//    		index=index%100000;
-//    		indexlaws[0]+="第"+index/1000+"节";
-//    		String laws=hitdoc.get("law");
-//    		if(laws!=null){
-//    			TokenStream tokenStream = analyzer.tokenStream("laws",new StringReader(laws));
-//    			Fragmenter displaysize= new SimpleFragmenter(laws.length());
-//    			highlighter.setTextFragmenter(displaysize);
-//    			String highlaws=highlighter.getBestFragment(tokenStream,laws);
-//        		indexlaws[1]=highlaws;
-//               	if(i==0){
-//            		List<String[]> path=new ArrayList<String[]>();
-//            		path.add(indexlaws);
-//            		files.put(temp,path);
-//            	}else{
-//            		if(files.containsKey(temp)){
-//            			files.get(temp).add(indexlaws);
-//            		}else{
-//            			List<String[]> path=new ArrayList<String[]>();
-//                		path.add(indexlaws);
-//                		files.put(temp,path);
-//            		}     		
-//            	}
-//    		}
-//        }
-//        ramdir.close();
-//        indexreader.close();
-//        fsdir.close();
-//		}catch (IOException e) {
-//			// TODO Auto-generated catch block
-//			if(e.getClass().getSimpleName().equals("IndexNotFoundException"))		//当没有找到索引文件时，catch异常，并弹框提示
-//				JOptionPane.showMessageDialog(null, "未找到索引文件，请先创建索引文件", "警告", JOptionPane.ERROR_MESSAGE);
-//			else
-//				e.printStackTrace();
-//		}
-//        return files;
-//		
-//	}
-	
 	/*
 	 *
 	 * Copyright @ 2018 Beijing Beidouht Co. Ltd. 
@@ -651,60 +527,42 @@ public class HandleLucene {
 	 * 			修复当未查询到索引时，由原来的返回null，改为返回files
 	 */
 	
-	public Map<String,List<String[]>> GetTermSearch(String indexpath,String keywords) throws IOException{
+	public Map<String,List<String[]>> GetAllSegments(String indexpath,String keywords) throws IOException{
 		
 		Map<String,List<String[]>> files=new LinkedHashMap<String,List<String[]>>();
     	List<String[]> path=new ArrayList<String[]>();
 		
-		Path inpath=Paths.get(indexpath);
-		
-		FSDirectory fsdir=FSDirectory.open(inpath);		//鍒涘缓纾佺洏绱㈠紩鏂囦欢
-		
-		IOContext iocontext=new IOContext();
-
-		RAMDirectory ramdir=new RAMDirectory(fsdir,iocontext);		//鍒涘缓鍐呭瓨绱㈠紩鏂囦欢锛屽苟灏嗙鐩樼储寮曟枃浠舵斁鍒板唴瀛樹腑
-		
-		//Analyzer analyzer=new StandardAnalyzer();		//鍒涘缓鏍囧噯鍒嗚瘝锟�?
-
-		IndexReader indexreader=DirectoryReader.open(ramdir);
-
-		IndexSearcher indexsearcher=new IndexSearcher(indexreader);
-		
-		Term term=new Term("file",keywords);
-		
-		TermQuery termquery=new TermQuery(term);
-		
-		SortField sortfield=new SortField("path",SortField.Type.INT,false);		//false涓哄崌锟�?
-       
-		Sort sort=new Sort(sortfield);
-		
-		int top=indexreader.numDocs();
-	
-        TopDocs topdocs=indexsearcher.search(termquery,top,sort); 
-        
-        ScoreDoc[] hits=topdocs.scoreDocs;
-          
-        int num=hits.length;
-        
-        if(num==0)
-        	return files;
-		String temp=null;
-		String laws;
-		for(int i=0;i<num;i++){
-			String indexlaws[]=new String[2];
-			Document hitdoc=indexsearcher.doc(hits[i].doc);
-			temp=hitdoc.get("file");	
-			indexlaws[0]=hitdoc.get("path");
-			laws=hitdoc.get("law");
-			if(laws!=null){
-				indexlaws[1]=laws;
-				path.add(indexlaws);						
-			}    
-		}  	
-		files.put(temp,path);			
-        ramdir.close();
-        indexreader.close();
-        fsdir.close();
+       	this.CreateIndexReader(indexpath); 
+       	
+       	if(indexreader!=null){
+    		IndexSearcher indexsearcher=new IndexSearcher(indexreader);
+    		int top=indexreader.numDocs();
+			if(top==0)
+				return files;
+			Term term=new Term("file",keywords);
+			TermQuery termquery=new TermQuery(term);
+			SortField sortfield=new SortField("path",SortField.Type.INT,false);		//false为升序
+			Sort sort=new Sort(sortfield);
+			TopDocs topdocs=indexsearcher.search(termquery,top,sort); 
+			ScoreDoc[] hits=topdocs.scoreDocs;
+			int num=hits.length;
+			if(num==0)		//查询结果为空
+				return files;
+			String temp=null;
+			String laws;
+			for(int i=0;i<num;i++){
+				String indexlaws[]=new String[2];
+				Document hitdoc=indexsearcher.doc(hits[i].doc);
+				temp=hitdoc.get("file");	
+				indexlaws[0]=hitdoc.get("path");
+				laws=hitdoc.get("law");
+				if(laws!=null){
+					indexlaws[1]=laws;
+					path.add(indexlaws);						
+				}    
+			}  	
+			files.put(temp,path);
+       	}
         return files;		
 	}
 	
@@ -733,87 +591,50 @@ public class HandleLucene {
 	 * 
 	 */
 	
-	public Map<String,List<String[]>> GetTermSearch(String indexpath,String keywords,int top) throws IOException{
+	public Map<String,List<String[]>> GetAllSegments(String indexpath,String keywords,int top) throws IOException{
 		
-		@SuppressWarnings("unchecked")
-		Map<String,List<String[]>> files=new LinkedMap();
+		String s=keywords.replaceAll("<[^>]+>","");
+		Map<String,List<String[]>> files=new LinkedHashMap<String,List<String[]>>();
 		List<String[]> path=new ArrayList<String[]>();
 		
-		Path inpath=Paths.get(indexpath);
+		this.CreateIndexReader(indexpath);
 		
-		FSDirectory fsdir=FSDirectory.open(inpath);		//锟斤拷锟斤拷锟斤拷锟斤拷锟斤拷锟斤拷锟侥硷拷
-		
-		IOContext iocontext=new IOContext();
-
-		RAMDirectory ramdir=new RAMDirectory(fsdir,iocontext);		//锟斤拷锟斤拷锟节达拷锟斤拷锟斤拷锟侥硷拷锟斤拷锟斤拷锟斤拷锟斤拷锟斤拷锟斤拷锟斤拷锟侥硷拷锟脚碉拷锟节达拷锟斤拷
-		
-//		Analyzer analyzer=new StandardAnalyzer();		//锟斤拷锟斤拷锟斤拷准锟街达拷锟斤拷
-
-		IndexReader indexreader=DirectoryReader.open(ramdir);
-
-		IndexSearcher indexsearcher=new IndexSearcher(indexreader);
-		
-		Term term=new Term("file",keywords);
-		
-		TermQuery termquery=new TermQuery(term);
-		
-		SortField sortfield=new SortField("path",SortField.Type.INT,false);		//false为锟斤拷锟斤拷
-      
-		Sort sort=new Sort(sortfield);
-	
-       TopDocs topdocs=indexsearcher.search(termquery,top,sort); 
-       
-       ScoreDoc[] hits=topdocs.scoreDocs;
-       
-       String temp=null;
-       
-       int num=hits.length;
-       
-       if(num!=0){
-       
-    	   for(int i=0;i<num;i++){
-       	
-    		   Document hitdoc=indexsearcher.doc(hits[i].doc);
-       	
-    		   temp=hitdoc.get("file");
-   			
-    		   String indexlaws[]=new String[4];
-   			
-    		   Integer index=Integer.valueOf(hitdoc.get("path"));		
-	    		if(index/100000==999)		//判断章段落的索引号是否为999,当索引号为999时，表明没有章段落，索引号设置为0
-	    			indexlaws[0]="第"+0+"章"+" ";
-	    		else
-	    			indexlaws[0]="第"+index/100000+"章"+" ";
-   		
-    		   index=index%100000;
-   		
-    		   indexlaws[0]+="第"+index/1000+"节";
-   		
-    		   String laws=hitdoc.get("law");
-    		   String author=hitdoc.get("author");	//锟斤拷取锟斤拷锟斤拷锟斤拷锟斤拷
-    		   String time=hitdoc.get("time");		//锟斤拷取锟斤拷锟斤拷锟斤拷锟斤拷锟斤拷锟斤拷
-   		
-    		   if(laws!=null){
-       		
-    			   indexlaws[1]=laws;
-    			   indexlaws[2]=author;
-    			   indexlaws[3]=time;
-           	
-    			   path.add(indexlaws);
-    		   
-    		   }
-      
-    	   }
-   	
-    	   files.put(temp,path);
-       
-       }
-		
-//       ramdir.close();
-//       indexreader.close();
-//       fsdir.close();
-       return files;
-		
+		if(indexreader!=null){
+    		IndexSearcher indexsearcher=new IndexSearcher(indexreader);		
+    		Term term=new Term("file",s);		
+    		TermQuery termquery=new TermQuery(term);		
+    		SortField sortfield=new SortField("path",SortField.Type.INT,false);		//false为升序      
+    		Sort sort=new Sort(sortfield);	
+    		TopDocs topdocs=indexsearcher.search(termquery,top,sort);         
+    		ScoreDoc[] hits=topdocs.scoreDocs;        
+    		String temp=null;        
+    		int num=hits.length;        
+    		if(num==0)
+    			return files;        
+    		for(int i=0;i<num;i++){        	
+    			Document hitdoc=indexsearcher.doc(hits[i].doc);       	
+    			temp=hitdoc.get("file");
+    			String indexlaws[]=new String[4];
+    			Integer index=Integer.valueOf(hitdoc.get("path"));
+    			if(index/100000==999)		//判断章段落的索引号是否为999,当索引号为999时，标明没有章段落
+    				indexlaws[0]="第"+0+"章"+" ";
+    			else
+    				indexlaws[0]="第"+index/100000+"章"+" ";
+    			index=index%100000;
+    			indexlaws[0]+="第"+index/1000+"节";
+    			String laws=hitdoc.get("law");
+    			String author=hitdoc.get("author");
+    			String time=hitdoc.get("time");
+    			if(laws!=null){
+    				indexlaws[1]=laws;
+    				indexlaws[2]=author;
+    				indexlaws[3]=time;
+    				path.add(indexlaws);
+    			}
+    		}
+    		files.put(temp,path);
+		}
+       return files;	
 	}
 	
 	
@@ -970,7 +791,7 @@ public class HandleLucene {
 		keywordset.add(new String[]{"AND","file","鍔冲姩浜轰簨浜夎浠茶鍔炴瑙勫垯锛堟柊锛夋硶.doc"});
 //		contentoffiles=handle.GetSearch("D:\\Lucene\\index\\","file:鍔冲姩浜轰簨浜夎浠茶鍔炴瑙勫垯锛堟柊锛夋硶.doc",1000);
 //		contentoffiles=handle.GetMultipleSearch("D:\\Lucene\\index\\",keywordset,1000);
-		contentoffiles=handle.GetTermSearch("D:\\Lucene\\index\\","鍔冲姩浜轰簨浜夎浠茶鍔炴瑙勫垯锛堟柊锛夋硶.doc",1000);
+//		contentoffiles=handle.GetTermSearch("D:\\Lucene\\index\\","鍔冲姩浜轰簨浜夎浠茶鍔炴瑙勫垯锛堟柊锛夋硶.doc",1000);
 		StringBuffer text=new StringBuffer();
 		for(String key:contentoffiles.keySet()){
 			for(int i=0;i<contentoffiles.get(key).size();i++){
