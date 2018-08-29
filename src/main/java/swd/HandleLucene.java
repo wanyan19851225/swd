@@ -732,6 +732,9 @@ public class HandleLucene {
 				finfo.put(file, infos);
 				FileIndexs fileindex=new FileIndexs();
 				f=fileindex.AddFiles(finfo,s[2]);
+				
+				ItemIndexs itemindex=new ItemIndexs();
+				itemindex.DeleteIndexs(s[1]);
 			} catch (IOException e) {
 				// TODO Auto-generated catch block
 				f=false;

@@ -1,5 +1,6 @@
 package swd;
 
+import java.io.File;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -93,5 +94,19 @@ public class ItemIndexs {
 		fw.close();
 		
 		return total;
+	}
+	
+	public Boolean DeleteIndexs(String indexpath) {
+		Boolean f=true;
+		File fpath=new File(indexpath);
+		if(!fpath.exists())
+			f=false;
+		else {
+			File[] files=fpath.listFiles();
+			for(int i=0;i<files.length;i++) {
+				f=files[i].delete();
+			}
+		}	
+		return f;
 	}
 }
