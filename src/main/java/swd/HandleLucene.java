@@ -888,7 +888,7 @@ public class HandleLucene {
 	 * InsertRepoIndex在仓库中的创建段落索引成功后，创建文档信息索引
 	 *
 	 * @params String[]
-	 * 				以String[操作类型，缓存索引路径，文档信息索引路径，文档名称，文档作者，文档创建日期，段落总数]形式传入参数
+	 * 				以String[操作类型，缓存索引路径，文档信息索引路径，文档名称，文档作者，文档创建日期，段落总数，文档路径，文档类型]形式传入参数
 	 * @return Boolean
 	 * 
 	 * @2018-8-23
@@ -906,8 +906,8 @@ public class HandleLucene {
 				
 				Map<String,String[]> finfo=new HashMap<String,String[]>();
 				String file=s[3];
-				String[] infos=new String[3];
-				System.arraycopy(s,4,infos,0,3);
+				String[] infos=new String[5];
+				System.arraycopy(s,4,infos,0,5);
 				finfo.put(file, infos);
 				FileIndexs fileindex=new FileIndexs();
 				f=fileindex.AddFiles(finfo,s[2]);

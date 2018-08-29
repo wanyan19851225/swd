@@ -171,13 +171,15 @@ public class FileIndexs {
 	 * AddFiles方法在为文档名称、文档作者、创建日期、文档段落总数建立索引文件
 	 *
 	 * @param file 
-	 * 				以Map<文档名称,[文档作者，创建日期，段落总数]>形式传入参数
+	 * 				以Map<文档名称,[文档作者，创建日期，段落总数，文档路径，文档类型]>形式传入参数
 	 * 				
 	 * @param indexpath
 	 * 				索引文件路径
 	 * 
 	 * @return Boolean
 	 * 				返回添加索引是否成功
+	 * @Modified 2018-8-29
+	 * 			创建文档信息索引，新增文档路径，文档类型两个字段
 	 * 
 	 */	
 	public Boolean AddFiles(Map<String,String[]> file,String indexpath){
@@ -201,6 +203,8 @@ public class FileIndexs {
 				doc.add(new Field("findex",entry.getKey(),itype));		//文档名称检索字段
 				doc.add(new Field("author",finfo[0],type));		//文档作者字段
 				doc.add(new Field("time",finfo[1],type));		//创建日期字段
+				doc.add(new Field("fpath",finfo[3],type));		//文档路径
+				doc.add(new Field("type",finfo[4],type));		//文档类型
 				doc.add(new NumericDocValuesField("segments",Integer.valueOf(finfo[2])));
 				doc.add(new IntPoint("segments",Integer.valueOf(finfo[2])));		//段落总数以Int类型存储
 				doc.add(new StoredField("segments",Integer.valueOf(finfo[2])));
@@ -438,7 +442,7 @@ public class FileIndexs {
 	 * 				从JTextField获取用户输入的关键字
 	 * 			
 	 * @return Map<Stirng,String[]>
-	 * 				将搜索结果以Map<文档名称，[文档作者，创建时间，段落总数，文档检索]>的映射关系，返回查询结果
+	 * 				将搜索结果以Map<文档名称，[文档作者，创建时间，段落总数，文档检索,文档路径,文档类型]>的映射关系，返回查询结果
 	 * 
 	 */
 	public Map<String,String[]> QueryFiles(String indexpath,String keywords){
@@ -467,7 +471,7 @@ public class FileIndexs {
 				for(int i=0;i<num;i++){	
 					Document hitdoc=indexsearcher.doc(hits[i].doc);
 					String file=hitdoc.get("file");
-					String infos[]=new String[4];
+					String infos[]=new String[6];
 					infos[0]=hitdoc.get("author");
 					infos[1]=hitdoc.get("time");
 					infos[2]=hitdoc.get("segments");
@@ -477,6 +481,8 @@ public class FileIndexs {
 						String highlaws=highlighter.getBestFragment(tokenStream,fname);
 						infos[3]=highlaws;
 					}
+					infos[4]=hitdoc.get("fpath");
+					infos[5]=hitdoc.get("type");
 					finfo.put(file, infos);				
 				}
 			}	

@@ -43,7 +43,17 @@ public class ExecuteRequest {
 					segments.add(tem1);
 				}
 				JSONObject tem=new JSONObject();
+				FileIndexs findexs=new FileIndexs();
+				Map<String,String[]> finfo=findexs.QueryFiles(Paths.filepath,"\""+entry.getKey()+"\"");
+				String fpath="";
+				String type="";
+				for(String[] v : finfo.values()){
+					fpath=v[4];
+					type=v[5];
+				}
 				tem.accumulate("file",entry.getKey());
+				tem.accumulate("fpath",fpath);
+				tem.accumulate("type",type);
 				tem.accumulate("segments",segments);
 				results.add(tem);
 			}
@@ -102,7 +112,7 @@ public class ExecuteRequest {
 	        send.accumulate("result",tatol);
 	        String body=gz.S2Gzip(send.toString());
 			out.write(body);
-			String[] s={Action.Add,indexpath.toString(),Paths.filepath,j.getString("file"),author,df.format(d),String.valueOf(tatol)};
+			String[] s={Action.Add,indexpath.toString(),Paths.filepath,j.getString("file"),author,df.format(d),String.valueOf(tatol),j.getString("fpath"),j.getString("type")};
 	        ServletDemo.item.put(s);
 			break;
 		}
@@ -124,10 +134,23 @@ public class ExecuteRequest {
 		}
 		case 105:{		//导入检索
 			String file=j.getString("file");
-			Map<String,List<String[]>> content=handle.GetTermSearch(swd.Paths.repositorypath,file);
+			Map<String,List<String[]>> content=handle.GetTermSearch(Paths.repositorypath,file);
 			JSONObject send=new JSONObject();
 	        JSONArray lawslist=new JSONArray();
 			if(!content.isEmpty()){
+				FileIndexs findexs=new FileIndexs();
+				Map<String,String[]> finfo=new HashMap<String,String[]>();
+				for(String keywords : content.keySet()){
+					finfo=findexs.QueryFiles(Paths.filepath,"\""+keywords+"\"");
+				}
+				String fpath="";
+				String type="";
+				for(String[] v : finfo.values()){
+					fpath=v[4];
+					type=v[5];
+				}
+				send.accumulate("fpath",fpath);
+				send.accumulate("type",type);
 				List<String[]> laws=content.get(file);
 				int count = laws.size();
 				for(int i=0;i<count;i++){
