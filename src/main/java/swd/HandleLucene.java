@@ -88,15 +88,15 @@ public class HandleLucene {
 				indexreader=DirectoryReader.open(ramdir);
 			}
 			else{
-			
 				if(indexwriter!=null){		//判断indexwriter是否实例化
+					if(!indexwriter.isOpen())
+						this.CreateIndexWriter(indexpath);
 					IndexReader tr=DirectoryReader.openIfChanged((DirectoryReader)indexreader,indexwriter);	
 					if(tr!=null){	
 						indexreader.close();	
 						indexreader=tr;	
-					}
-				}
-		
+					}					
+				}		
 			}
 			f=true;
 		}catch (IOException e) {
@@ -684,15 +684,17 @@ public class HandleLucene {
 
 	public void CreateIndexWriter(String indexpath){
 		try{
-			Path inpath=Paths.get(indexpath);
-			FSDirectory dir = FSDirectory.open(inpath);
-			Analyzer analyzer=new StandardAnalyzer();
-			TieredMergePolicy ti=new TieredMergePolicy();
-			ti.setForceMergeDeletesPctAllowed(0);		
-			IndexWriterConfig config=new IndexWriterConfig(analyzer); 
-    		config.setOpenMode(IndexWriterConfig.OpenMode.CREATE_OR_APPEND);
-    		config.setMergePolicy(ti);		
-    		indexwriter=new IndexWriter(dir,config);
+			if(indexwriter==null||!indexwriter.isOpen()){
+				Path inpath=Paths.get(indexpath);
+				FSDirectory dir = FSDirectory.open(inpath);
+				Analyzer analyzer=new StandardAnalyzer();
+				TieredMergePolicy ti=new TieredMergePolicy();
+				ti.setForceMergeDeletesPctAllowed(0);		
+				IndexWriterConfig config=new IndexWriterConfig(analyzer); 
+				config.setOpenMode(IndexWriterConfig.OpenMode.CREATE_OR_APPEND);
+				config.setMergePolicy(ti);		
+				indexwriter=new IndexWriter(dir,config);
+			}
 		}catch (IOException e) {
 		// TODO Auto-generated catch block
 			e.printStackTrace();
