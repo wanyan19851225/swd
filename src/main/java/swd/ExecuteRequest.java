@@ -101,7 +101,7 @@ public class ExecuteRequest {
 	        }
 	        Map<String,List<String[]>> content=new HashMap<String,List<String[]>>();
 	        content.put(j.getString("file"),laws);
-	        StringBuffer indexpath=new StringBuffer(Paths.itempath);
+	        StringBuilder indexpath=new StringBuilder(Paths.itempath);
 	        indexpath.append("\\"+author+"\\");
 	        indexpath.append(UUID.randomUUID().toString().replace("-","")+"\\");
 	        ItemIndexs itemindex=new ItemIndexs();
@@ -112,7 +112,13 @@ public class ExecuteRequest {
 	        send.accumulate("result",tatol);
 	        String body=gz.S2Gzip(send.toString());
 			out.write(body);
-			String[] s={Action.Add,indexpath.toString(),Paths.filepath,j.getString("file"),author,df.format(d),String.valueOf(tatol),j.getString("fpath"),j.getString("type")};
+			String itempath=indexpath.toString();
+			String fname=j.getString("file");
+			String fpath=j.getString("fpath");
+			String ftype=j.getString("type");
+			String forder=j.getString("forder");
+			String fsum=j.getString("fsum");
+			String[] s={Action.Add,itempath,Paths.filepath,fname,author,df.format(d),String.valueOf(tatol),fpath,ftype,Paths.repositorypath,forder,fsum};
 	        ServletDemo.item.put(s);
 			break;
 		}
@@ -124,10 +130,11 @@ public class ExecuteRequest {
 	        send.put("command","104");
 	        send.accumulate("result",1);
 	        String body=gz.S2Gzip(send.toString());
+	        int size=objarry.size();
 			out.write(body);	
-	        for(int i=0;i<objarry.size();i++){		
+	        for(int i=0;i<size;i++){		
 	        	tem=objarry.getJSONObject(i);
-	        	String[] s={Action.Delete,tem.getString("file"),Paths.filepath};
+	        	String[] s={Action.Delete,tem.getString("file"),Paths.filepath,Paths.repositorypath,String.valueOf(i),String.valueOf(size-1)};
 	        	ServletDemo.item.put(s);
 	        }
 			break;

@@ -182,7 +182,7 @@ public class FileIndexs {
 	 * 			创建文档信息索引，新增文档路径，文档类型两个字段
 	 * 
 	 */	
-	public Boolean AddFiles(Map<String,String[]> file,String indexpath){
+	public Boolean AddFiles(Map<String,String[]> file,String indexpath,int j,int fn){
 		Boolean f=true;
 		try {
 			this.CreateAddIndexWriter(indexpath);
@@ -211,8 +211,9 @@ public class FileIndexs {
 				ramwriter.addDocument(doc);			
 			}
 			ramwriter.close();	
-			indexwriter.addIndexes(ramdir); 		//程序结束后，将内存索引写入到磁盘索引中
-	        indexwriter.commit();
+			indexwriter.addIndexes(ramdir);
+	        if(j==fn)
+	        	indexwriter.commit();
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			f=false;
@@ -322,17 +323,21 @@ public class FileIndexs {
 	 * 				文档名称
 	 * 			indexpath 
 	 * 				文档信息索引文件存放目录	
-	 * @return Boolean	   				
+	 * @return Boolean	
 	 * 
+	 * @2018-9-5
+	 * 			当删除最后一个文档时，才执行提交操作
 	 */
-	public Boolean DeleteFile(String filename,String indexpath){
+	public Boolean DeleteFile(String filename,String indexpath,int i,int fn){
 		Boolean f=true;
 		try {
 			this.CreateDeleteIndexWriter(indexpath);
 			Term t=new Term("file",filename);
 			indexwriter.deleteDocuments(t);
-			indexwriter.forceMergeDeletes();		//删除索引时并不是立即从磁盘删除，而是放入回收站，可回滚操作，调用该方法后，是立即删除
-			indexwriter.commit();  	
+			if(i==fn){
+				indexwriter.forceMergeDeletes();
+				indexwriter.commit();
+			}
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			f=false;
