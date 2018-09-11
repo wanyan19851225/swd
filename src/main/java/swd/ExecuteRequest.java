@@ -14,6 +14,8 @@ import java.util.Map.Entry;
 
 import javax.servlet.http.HttpServletResponse;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.lucene.queryparser.classic.ParseException;
 import org.apache.lucene.search.highlight.InvalidTokenOffsetsException;
 
@@ -21,7 +23,7 @@ import net.sf.json.JSONArray;
 import net.sf.json.JSONObject;
 
 public class ExecuteRequest {
-		
+	private Logger logger = LogManager.getLogger(LogManager.ROOT_LOGGER_NAME);
 	public void Send(JSONObject j,HttpServletResponse response) throws ParseException, IOException, InvalidTokenOffsetsException, InterruptedException{
 		
 		HandleLucene handle=new HandleLucene();
@@ -62,6 +64,7 @@ public class ExecuteRequest {
 	        send.accumulate("ResultList", results);
 	        String body=gz.S2Gzip(send.toString());
 			out.write(body);
+			
 			break;
 		}
 		case 102:{		//获取所有文档信息

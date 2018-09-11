@@ -55,7 +55,6 @@ public class ServletDemo extends HttpServlet {
 	 */
 	protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
 		// TODO Auto-generated method stub
-//		doGet(request, response);
 		Map<String ,String> rev=new HashMap<String ,String>();
 		JSONObject j=IOHttp.GetJson(request);
 		ExecuteRequest execute=new ExecuteRequest();
