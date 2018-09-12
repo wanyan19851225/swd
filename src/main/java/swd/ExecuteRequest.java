@@ -3,6 +3,7 @@ package swd;
 import java.io.File;
 import java.io.IOException;
 import java.io.Writer;
+import java.net.URL;
 import java.sql.Date;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
@@ -287,10 +288,11 @@ public class ExecuteRequest {
 			break;
 		}
 		case 109:{		//查询版本信息
-			File f = new File(this.getClass().getClassLoader().getResource("version.xml").getPath());
-		    SAXReader reader = new SAXReader();
+//			File f = new File(this.getClass().getClassLoader().getResource("version.xml").getPath());
+		    URL vurl=this.getClass().getClassLoader().getResource("version.xml");
+			SAXReader reader = new SAXReader();
 		    try {
-				Document doc = reader.read(f);
+				Document doc = reader.read(vurl);
 				Element root = doc.getRootElement();
 				String nversion=root.elementText("Version");
 				JSONObject send=new JSONObject();
@@ -298,7 +300,8 @@ public class ExecuteRequest {
 		        send.accumulate("token", "");
 		        send.accumulate("nversion", nversion);
 		        String body=gz.S2Gzip(send.toString());
-		        out.write(body);	
+		        out.write(body);
+		        ServletDemo.logger.info(adr+":"+"获取版本信息");
 			} catch (DocumentException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
