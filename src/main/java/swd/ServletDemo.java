@@ -41,7 +41,6 @@ public class ServletDemo extends HttpServlet {
     	super.init();
 		ExecutorService service = Executors.newFixedThreadPool(2);
 		service.execute(new UpdateIndex());
-//		service.execute(new UpdateFile());
     }
 
 	/**
@@ -57,25 +56,19 @@ public class ServletDemo extends HttpServlet {
 	 */
 	protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
 		// TODO Auto-generated method stub
-//		Map<String ,String> rev=new HashMap<String ,String>();
 		JSONObject j=IOHttp.GetJson(request);
 		ExecuteRequest execute=new ExecuteRequest();
-//		for(String key:rev.keySet()){
-//			System.out.println(key+":"+rev.get(key));
-//		}
-			try {
-				execute.Send(j,request.getRemoteAddr(),response);
-			} catch (ParseException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			} catch (InvalidTokenOffsetsException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			} catch (InterruptedException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}
-
+		try {
+			execute.Send(j,request.getRemoteAddr(),response);
+		} catch (ParseException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (InvalidTokenOffsetsException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (InterruptedException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 	}
-
 }

@@ -1,5 +1,6 @@
 package swd;
 
+import java.io.File;
 import java.io.IOException;
 import java.io.Writer;
 import java.sql.Date;
@@ -18,6 +19,10 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.lucene.queryparser.classic.ParseException;
 import org.apache.lucene.search.highlight.InvalidTokenOffsetsException;
+import org.dom4j.Document;
+import org.dom4j.DocumentException;
+import org.dom4j.Element;
+import org.dom4j.io.SAXReader;
 
 import net.sf.json.JSONArray;
 import net.sf.json.JSONObject;
@@ -281,8 +286,25 @@ public class ExecuteRequest {
 	        ServletDemo.logger.info(adr+":"+"使用单条件获取文档信息");
 			break;
 		}
+		case 109:{		//查询版本信息
+			File f = new File(this.getClass().getClassLoader().getResource("version.xml").getPath());
+		    SAXReader reader = new SAXReader();
+		    try {
+				Document doc = reader.read(f);
+				Element root = doc.getRootElement();
+				String nversion=root.elementText("Version");
+				JSONObject send=new JSONObject();
+		        send.accumulate("command","107");
+		        send.accumulate("token", "");
+		        send.accumulate("nversion", nversion);
+		        String body=gz.S2Gzip(send.toString());
+		        out.write(body);	
+			} catch (DocumentException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+			break;
+		}
 		}
 	}
-
-
 }
