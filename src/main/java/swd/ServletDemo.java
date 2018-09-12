@@ -15,6 +15,8 @@ import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.lucene.queryparser.classic.ParseException;
 import org.apache.lucene.search.highlight.InvalidTokenOffsetsException;
 
@@ -26,7 +28,7 @@ import net.sf.json.JSONObject;
 public class ServletDemo extends HttpServlet {
 	private static final long serialVersionUID = 1L;
 	public static BlockingQueue<String[]> item=new LinkedBlockingQueue<String[]>();
-  
+	public static Logger logger = LogManager.getLogger();
     /**
      * @see HttpServlet#HttpServlet()
      */
@@ -55,14 +57,14 @@ public class ServletDemo extends HttpServlet {
 	 */
 	protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
 		// TODO Auto-generated method stub
-		Map<String ,String> rev=new HashMap<String ,String>();
+//		Map<String ,String> rev=new HashMap<String ,String>();
 		JSONObject j=IOHttp.GetJson(request);
 		ExecuteRequest execute=new ExecuteRequest();
-		for(String key:rev.keySet()){
-			System.out.println(key+":"+rev.get(key));
-		}
+//		for(String key:rev.keySet()){
+//			System.out.println(key+":"+rev.get(key));
+//		}
 			try {
-				execute.Send(j,response);
+				execute.Send(j,request.getRemoteAddr(),response);
 			} catch (ParseException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();

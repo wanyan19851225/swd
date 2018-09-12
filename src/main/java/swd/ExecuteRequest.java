@@ -23,8 +23,7 @@ import net.sf.json.JSONArray;
 import net.sf.json.JSONObject;
 
 public class ExecuteRequest {
-	private Logger logger = LogManager.getLogger(LogManager.ROOT_LOGGER_NAME);
-	public void Send(JSONObject j,HttpServletResponse response) throws ParseException, IOException, InvalidTokenOffsetsException, InterruptedException{
+	public void Send(JSONObject j,String adr,HttpServletResponse response) throws ParseException, IOException, InvalidTokenOffsetsException, InterruptedException{
 		
 		HandleLucene handle=new HandleLucene();
 		GZipUntils gz=new GZipUntils();
@@ -32,7 +31,6 @@ public class ExecuteRequest {
 		Writer out = response.getWriter();
 		switch (Integer.parseInt(cmd)) {
 		case 101:{		//检索仓库段落内容
-//			Map<String,List<String[]>> content=handle.GetSearch(Paths.repositorypath,j.getString("keywords"),100);
 			Map<String,List<String[]>> content=handle.QuerySegments(Paths.repositorypath,j.getString("keywords"));
 			JSONArray results=new JSONArray();
 			JSONObject send=new JSONObject();
@@ -64,7 +62,7 @@ public class ExecuteRequest {
 	        send.accumulate("ResultList", results);
 	        String body=gz.S2Gzip(send.toString());
 			out.write(body);
-			
+			ServletDemo.logger.info(adr+":"+"执行检索操作");
 			break;
 		}
 		case 102:{		//获取所有文档信息
@@ -86,6 +84,7 @@ public class ExecuteRequest {
 	        send.put("FileList",filelist);
 	        String body=gz.S2Gzip(send.toString());
 	        out.write(body);
+	        ServletDemo.logger.info(adr+":"+"获取文档信息");
 	        break;
 		}
 		case 103:{		//提交索引
@@ -123,10 +122,12 @@ public class ExecuteRequest {
 			String fsum=j.getString("fsum");
 			String[] s={Action.Add,itempath,Paths.filepath,fname,author,df.format(d),String.valueOf(tatol),fpath,ftype,Paths.repositorypath,forder,fsum};
 	        ServletDemo.item.put(s);
+	        ServletDemo.logger.info(adr+":"+author+"提交检索");
 			break;
 		}
 		case 104:{		//删除索引
 	        JSONArray objarry=j.getJSONArray("fileslist");
+	        String author=j.getString("user");
 	        JSONObject tem=new JSONObject();
 	        JSONObject send=new JSONObject();
 	        send.put("token","");
@@ -140,6 +141,7 @@ public class ExecuteRequest {
 	        	String[] s={Action.Delete,tem.getString("file"),Paths.filepath,Paths.repositorypath,String.valueOf(i),String.valueOf(size-1)};
 	        	ServletDemo.item.put(s);
 	        }
+	        ServletDemo.logger.info(adr+":"+author+"删除文档");
 			break;
 		}
 		case 105:{		//导入检索
@@ -181,6 +183,7 @@ public class ExecuteRequest {
 	        send.put("file",file);
 	        String body=gz.S2Gzip(send.toString());
 	        out.write(body);
+	        ServletDemo.logger.info(adr+":"+"下载文档");
 	        break;
 		}
 		case 106:{		//查询文档段落
@@ -215,6 +218,7 @@ public class ExecuteRequest {
 	        send.put("file",file);
 	        String body=gz.S2Gzip(send.toString());
 	        out.write(body);
+	        ServletDemo.logger.info(adr+":"+"查询 文档内容");
 	        break;
 		}
 		case 107:{		//多条件查询文档信息索引	
@@ -248,6 +252,7 @@ public class ExecuteRequest {
 	        send.accumulate("token", "");
 	        String body=gz.S2Gzip(send.toString());
 	        out.write(body);
+	        ServletDemo.logger.info(adr+":"+"使用多条件获取文档信息");
 	        break;
 		}
 		case 108:{		//单条件查询文档信息索引
@@ -273,6 +278,7 @@ public class ExecuteRequest {
 	        send.accumulate("token", "");
 	        String body=gz.S2Gzip(send.toString());
 	        out.write(body);
+	        ServletDemo.logger.info(adr+":"+"使用单条件获取文档信息");
 			break;
 		}
 		}

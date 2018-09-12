@@ -32,8 +32,6 @@ public class URLFilter implements Filter {
         response.setHeader("Access-Control-Max-Age", "3628800");
         response.setHeader("Access-Control-Allow-Headers", "Content-Type,Access-Token");
   
-        System.out.println(req.getRemoteAddr()+":建立请求!");  
-        
         chain.doFilter(req, response);    
     }   
   
